@@ -32,16 +32,16 @@
 #include <gsl/gsl_sf_gamma.h>
 
 static const char * help=
-        "\
+"\
         Usage: treeBreaker [OPTIONS] inputfile_tree inputfile_phenotype outputfile\n\
-            \n\
-            Options:\n\
-                -x NUM      Sets the number of iterations after burn-in (default is 50000)\n\
-                -y NUM      Sets the number of burn-in iterations (default is 50000)\n\
-                -z NUM      Sets the number of iterations between samples (default is 100)\n\
-                -S NUM      Sets the seed for the random number generator to NUM\n\
-                -v          Verbose mode\n\
-                \n";
+        \n\
+        Options:\n\
+        -x NUM      Sets the number of iterations after burn-in (default is 50000)\n\
+        -y NUM      Sets the number of burn-in iterations (default is 50000)\n\
+        -z NUM      Sets the number of iterations between samples (default is 100)\n\
+        -S NUM      Sets the seed for the random number generator to NUM\n\
+        -v          Verbose mode\n\
+        \n";
 
 int propose_new_b(int *b,int num_branches, int * b_star);
 int count_phenos( int set[], int parents[], int b[], int pheno[], int **counts);
@@ -91,15 +91,15 @@ int main(int argc, char *argv[]){
     bool verbose=false;
     int c;
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
-    switch (c)
-    {
-        case('x'):postburn=atoi(optarg);break;
-        case('y'):burn=atoi(optarg);break;
-        case('z'):thin=atoi(optarg);break;
-	case('S'):seeded=true;seed=atoi(optarg);break;
-	case('v'):verbose=true;break;
-	default:fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);
-    }
+        switch (c)
+        {
+            case('x'):postburn=atoi(optarg);break;
+            case('y'):burn=atoi(optarg);break;
+            case('z'):thin=atoi(optarg);break;
+            case('S'):seeded=true;seed=atoi(optarg);break;
+            case('v'):verbose=true;break;
+            default:fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);
+        }
     if (argc-optind!=3) {fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);}
     r = gsl_rng_alloc(gsl_rng_mt19937);
     if (seeded==true) gsl_rng_set(r,seed); else gsl_rng_set(r,time(NULL));
@@ -117,10 +117,10 @@ int main(int argc, char *argv[]){
     char * output_filename = argv[optind++];
 
     if (verbose) for(i = 0; i<number_branches; i++){ 
-          printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branches_len[i]);
-          for (j = 0; j < n_leaves_under[i]; ++j)
-          printf("\t%d", leaves_under[i][j]);
-          putchar('\n');
+        printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branches_len[i]);
+        for (j = 0; j < n_leaves_under[i]; ++j)
+            printf("\t%d", leaves_under[i][j]);
+        putchar('\n');
     }
 
     if ((b_counts = calloc(number_branches, sizeof(unsigned long int))) == NULL){
@@ -175,10 +175,10 @@ int main(int argc, char *argv[]){
           printf("The value of proposed lambda is:%e\n",temp);*/
     old_log_likelihood = log_likelihood_all(counts,num_sec, lambda, b, branches_len);
     for(i = 0;i <num_sec;i++)
-            for (j = 0; j<number_phenotypes;j++)
-                counts[i][j] = 0;
+        for (j = 0; j<number_phenotypes;j++)
+            counts[i][j] = 0;
 
-/*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
+    /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
     /* let's do the mcmc now. */
     for(i = 0; i<mcmc_counter; i++){
         if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0)
@@ -186,16 +186,16 @@ int main(int argc, char *argv[]){
         if (i+1==mcmc_counter) {printf("\b\b\b\b\b# 100%%\n");fflush(0);}
 
         changed_branch = propose_new_b(b,number_branches, b_star);
-        
-/*        printf("proposed changed branch is: %d\n",changed_branch);
-        for(j = 0; j<number_branches; j++)
-            printf("%d\t%d\n",j,b_star[j]);
-        printf("\n");*/
-        
+
+        /*        printf("proposed changed branch is: %d\n",changed_branch);
+                  for(j = 0; j<number_branches; j++)
+                  printf("%d\t%d\n",j,b_star[j]);
+                  printf("\n");*/
+
         num_sec = count_phenos(sections, parents, b_star, phenos, counts);
 
         /*for (j = 0; j<num_sec; j++)
-            printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
+          printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
 
         proposal_log_likelihood = log_likelihood_all(counts,num_sec,lambda,b_star,branches_len);
         if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
@@ -219,10 +219,10 @@ int main(int argc, char *argv[]){
             }
             for(j = 0;j <num_sec;j++)
                 for (k = 0; k<number_phenotypes;k++)
-                     counts[j][k] = 0;
+                    counts[j][k] = 0;
         }
         /* we need to put something in here later */
-        
+
     }
 
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]){
 
     /* my debugging code.*/
 
-   /*    for(i = 0; i<number_leaves; i++){
+    /*    for(i = 0; i<number_leaves; i++){
           printf("%s\t%d\n",names[i],temp_phenos[i]);
           }
 
@@ -346,7 +346,7 @@ int propose_new_b(int *b,int num_branches, int *b_star)
 {
     int j;
     int i = gsl_rng_uniform_int(r,num_branches-1);
-/*    i = 23;*/
+    /*    i = 23;*/
     for(j = 0; j < num_branches; j++)
         b_star[j] = b[j];
     b_star[i] = ! b_star[i];
