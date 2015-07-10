@@ -1,13 +1,47 @@
+/***************************************************************************
+ *   Copyright (C) 2015 by Azim Ansari and Xavier Didelot                  *
+ *   ansari.azim@gmail.com and xavier.didelot@gmail.com                    *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 #include "../libs/knhx.h"
 #include <time.h>
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf_gamma.h>
+
+static const char * help=
+        "\
+        Usage: treeBreaker [OPTIONS] inputfile_tree inputfile_phenotype outputfile\n\
+            \n\
+            Options:\n\
+                -x NUM      Sets the number of iterations after burn-in (default is 50000)\n\
+                -y NUM      Sets the number of burn-in iterations (default is 50000)\n\
+                -z NUM      Sets the number of iterations between samples (default is 100)\n\
+                -S NUM      Sets the seed for the random number generator to NUM\n\
+                -v          Verbose mode\n\
+                \n";
 
 int propose_new_b(int *b,int num_branches, int * b_star);
 int count_phenos( int set[], int parents[], int b[], int pheno[], int **counts);
@@ -49,22 +83,40 @@ int main(int argc, char *argv[]){
     double old_log_likelihood, lambda,temp;
     double proposal_log_likelihood, proposal_lambda;
     unsigned long int *b_counts;
-
+    int postburn=500000;
+    int burn=500000;
+    int thin=1000;
+    bool seeded=false;
+    unsigned int seed=0;
+    bool verbose=false;
+    int c;
+    while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
+    switch (c)
+    {
+        case('x'):postburn=atoi(optarg);break;
+        case('y'):burn=atoi(optarg);break;
+        case('z'):thin=atoi(optarg);break;
+	case('S'):seeded=true;seed=atoi(optarg);break;
+	case('v'):verbose=true;break;
+	default:fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);
+    }
+    if (argc-optind!=3) {fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);}
     r = gsl_rng_alloc(gsl_rng_mt19937);
-    gsl_rng_set(r,time(NULL));
-    mcmc_counter = atoi(argv[3]);
+    if (seeded==true) gsl_rng_set(r,seed); else gsl_rng_set(r,time(NULL));
+    mcmc_counter = postburn+burn;
 
-    newick_str = get_newick_from_file(argv[1]);
-    printf("%s\n",newick_str);
+    newick_str = get_newick_from_file(argv[optind++]);
+    if (verbose) printf("%s\n",newick_str);
 
     tree = kn_parse(newick_str,&number_branches, &error);
     number_leaves = get_number_leaves(tree, number_branches);
-    number_phenotypes = get_pheno_from_file(argv[2], &names, &temp_phenos, number_leaves);
+    number_phenotypes = get_pheno_from_file(argv[optind++], &names, &temp_phenos, number_leaves);
     set_pheno_in_tree(tree, number_branches, number_leaves, names, temp_phenos);
     get_tree_data(tree, number_branches,number_leaves, &parents, &branches_len,&phenos);
     get_leaves_under(parents, &leaves_under, &n_leaves_under, number_leaves, number_branches);
+    char * output_filename = argv[optind++];
 
-    for(i = 0; i<number_branches; i++){ 
+    if (verbose) for(i = 0; i<number_branches; i++){ 
           printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branches_len[i]);
           for (j = 0; j < n_leaves_under[i]; ++j)
           printf("\t%d", leaves_under[i][j]);
@@ -129,6 +181,10 @@ int main(int argc, char *argv[]){
 /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
     /* let's do the mcmc now. */
     for(i = 0; i<mcmc_counter; i++){
+        if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0)
+        {printf("\b\b\b\b\b# %3d%%",i*100/mcmc_counter);fflush(0);}
+        if (i+1==mcmc_counter) {printf("\b\b\b\b\b# 100%%\n");fflush(0);}
+
         changed_branch = propose_new_b(b,number_branches, b_star);
         
 /*        printf("proposed changed branch is: %d\n",changed_branch);
@@ -169,10 +225,12 @@ int main(int argc, char *argv[]){
         
     }
 
-    printf("counter for acceptance is: %d\n",temp_counter);
-    printf("posterior values are as follows.\n");
+    if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
+    if (verbose) printf("Writing output file.\n");
+    FILE * f=fopen(output_filename,"w");
     for(i = 0; i<number_branches; i++)
-        printf("[%d]\t%e\n",i,((double) b_counts[i])/mcmc_counter);
+        fprintf(f,"[%d]\t%e\n",i,((double) b_counts[i])/mcmc_counter);
+    fclose(f);
 
     /*for(i = 0; i<number_branches; i++)
       printf("b are: [%d]\t%d\n",i,b[i]);
