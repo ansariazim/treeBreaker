@@ -174,7 +174,8 @@ static inline int kputc(int c, kstring_t *s)
     s->s[s->l++] = c; s->s[s->l] = 0;
     return c;
 }
-
+/* I am going to use this function to output a newick tree with comment. It could have the
+ * index of the output b and the posterior probabilities as comments.*/
 static void format_node_recur(const knhx1_t *node, const knhx1_t *p, kstring_t *s, char *numbuf)
 {
     if (p->n) {
@@ -185,12 +186,18 @@ static void format_node_recur(const knhx1_t *node, const knhx1_t *p, kstring_t *
             format_node_recur(node, &node[p->child[i]], s, numbuf);
         }
         kputc(')', s);
-        if (p->name) kputsn(p->name, strlen(p->name), s);
+        if (p->name) {
+            sprintf(numbuf,"%s[%d]",p->name,p->index);
+            kputsn(numbuf, strlen(numbuf), s);
+        }
         if (p->d >= 0) {
             sprintf(numbuf, ":%g", p->d);
             kputsn(numbuf, strlen(numbuf), s);
         }
-    } else kputsn(p->name, strlen(p->name), s);
+    } else{
+            sprintf(numbuf,"%s[%d]:%g",p->name,p->index,p->d);
+            kputsn(numbuf, strlen(numbuf), s);
+    }
 }
 
 void kn_format(const knhx1_t *node, int root, kstring_t *s) // TODO: get rid of recursion
@@ -604,11 +611,11 @@ void set_pheno_in_tree(knhx1_t *tree, const int n_nodes, const int number_leaves
 }
 
 
-/*#define KNHX_MAIN */
+#define KNHX_MAIN 
 #ifdef KNHX_MAIN
 int main(int argc, char *argv[])
 {
-    char *s = "((a[abc],d1)x:0.5,((b[&&NHX:S=MOUSE],h2)[&&NHX:S=HUMAN:B=99][blabla][&&NHX:K=foo],c))";
+    char *s = "(((Leaf_4:0.087392,(Leaf_3:0.065174,(Leaf_1:0.020359,Leaf_2:0.020359):0.044815):0.022218):1.1487,Leaf_5:1.2361):1.3673,((Leaf_20:0.23963,((Leaf_18:0.048775,Leaf_19:0.048775):0.10812,((Leaf_15:0.041935,Leaf_16:0.041935):0.096321,Leaf_17:0.13826):0.018637):0.08274):0.10039,(((Leaf_12:0.032601,(Leaf_10:0.012625,Leaf_11:0.012625):0.019976):0.05359,(Leaf_9:0.075139,((Leaf_6:0.054873,Leaf_7:0.054873):0.008595,Leaf_8:0.063468):0.011671):0.011052):0.19322,(Leaf_13:0.076194,Leaf_14:0.076194):0.20322):0.060607):2.2634)";/*  "((a[abc],d1)x:0.5,((b[&&NHX:S=MOUSE],h2)[&&NHX:S=HUMAN:B=99][blabla][&&NHX:K=foo],c))";*/
     int *par = NULL;
     double *dists = NULL;
     knhx1_t *node;
@@ -619,7 +626,8 @@ int main(int argc, char *argv[])
     int num_leaves;
 
     node = kn_parse(s, &n, &error);
-    get_tree_data(node, n,&par, &dists);
+    /*get_tree_data(knhx1_t *tree, const int n_nodes, const int number_leaves, int **pars, double **dists, int **phenos)*/
+
     num_leaves = get_number_leaves(node, n);
 
 
@@ -631,7 +639,7 @@ int main(int argc, char *argv[])
         putchar('\n');
     }
 
-    for(i = 0; i<n;i++){
+    /*for(i = 0; i<n;i++){
         printf("[%4d]\t %d\t %e\n",i,par[i],dists[i]);
     }
 
@@ -643,7 +651,7 @@ int main(int argc, char *argv[])
             printf("%4d ",leaves[i][j]);
 
         printf("\n");
-    }
+    }*/
 
 
     str.l = str.m = 0; str.s = 0;
