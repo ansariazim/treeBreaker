@@ -36,9 +36,9 @@ static const char * help=
         Usage: treeBreaker [OPTIONS] inputfile_tree inputfile_phenotype outputfile\n\
         \n\
         Options:\n\
-        -x NUM      Sets the number of iterations after burn-in (default is 50000)\n\
-        -y NUM      Sets the number of burn-in iterations (default is 50000)\n\
-        -z NUM      Sets the number of iterations between samples (default is 100)\n\
+        -x NUM      Sets the number of iterations after burn-in (default is 500000)\n\
+        -y NUM      Sets the number of burn-in iterations (default is 500000)\n\
+        -z NUM      Sets the number of iterations between samples (default is 1000)\n\
         -S NUM      Sets the seed for the random number generator to NUM\n\
         -v          Verbose mode\n\
         \n";
@@ -227,14 +227,20 @@ int main(int argc, char *argv[]){
     }
     denominator = mcmc_counter;
     set_posterior(b_counts, denominator, tree);
-    
+    str.l = str.m = 0; str.s = 0;
+    kn_format(tree, number_branches - 1, &str);
+
+    fp = fopen(output_filename,"w");
+    fprintf(fp,"%s\n",str.s);
+    fclose(fp);
+    free(str.s);
 
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
     if (verbose) printf("Writing output file.\n");
-    FILE * f=fopen(output_filename,"w");
+    if (verbose){
     for(i = 0; i<number_branches; i++)
-        fprintf(f,"[%d]\t%e\n",i,((double) b_counts[i])/mcmc_counter);
-    fclose(f);
+        printf("[%d]\t%f\n",i,((double) b_counts[i])/mcmc_counter);
+    }
 
     /*for(i = 0; i<number_branches; i++)
       printf("b are: [%d]\t%d\n",i,b[i]);
