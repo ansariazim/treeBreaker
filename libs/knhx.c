@@ -614,7 +614,7 @@ void set_pheno_in_tree(knhx1_t *tree, const int n_nodes, const int number_leaves
 }
 
 
-#define KNHX_MAIN 
+/*#define KNHX_MAIN */
 #ifdef KNHX_MAIN
 int main(int argc, char *argv[])
 {
