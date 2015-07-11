@@ -52,6 +52,7 @@ double propose_new_lambda(double old_lambda);
 double log_likelihood_all(int **counts, int num_sec, double lambda, int *b, double *b_lengths);
 double log_likelihood_lambda_constant(int **counts, int num_sec, int *b, double lambda,double *b_length);
 double log_likelihood_b_constant(double lambda,int *b, double *b_length);
+void set_posterior(unsigned long int *b_counts, unsigned long int denominator, knhx1_t *tree);
 
 
 
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]){
     int **counts,temp_counter=0;
     double old_log_likelihood, lambda,temp;
     double proposal_log_likelihood, proposal_lambda;
-    unsigned long int *b_counts;
+    unsigned long int *b_counts, denominator;
     int postburn=500000;
     int burn=500000;
     int thin=1000;
@@ -224,6 +225,9 @@ int main(int argc, char *argv[]){
         /* we need to put something in here later */
 
     }
+    denominator = mcmc_counter;
+    set_posterior(b_counts, denominator, tree);
+    
 
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
     if (verbose) printf("Writing output file.\n");
@@ -262,16 +266,16 @@ int main(int argc, char *argv[]){
           printf("%s\t%d\n",names[i],temp_phenos[i]);
           }
 
-          printf("number of nodes on the tree is %d\n",number_branches);
-          for(i = 0; i<number_branches; i++){
+          printf("number of nodes on the tree is %d\n",number_branches);*/
+/*          for(i = 0; i<number_branches; i++){
           knhx1_t *p = tree + i;
-          printf("[%3d] %10s\t%3d\t%3d\t%4g", i, p->name, p->parent, p->n, p->d);
+          printf("[%3d] [%3d] %5f\t%10s\t%3d\t%3d\t%4g", i,p->index,p->posterior, p->name, p->parent, p->n, p->d);
           for (j = 0; j < p->n; ++j)
           printf("\t%d", p->child[j]);
           putchar('\n');
           }
-          printf("\n");
-
+          printf("\n");*/
+/*
           for(i = 0; i<number_branches; i++){ 
           printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branchs_len[i]);
           for (j = 0; j < n_leaves_under[i]; ++j)
@@ -426,3 +430,15 @@ double log_likelihood_b_constant(double lambda,int *b, double *b_length)
     res = log_lambda_likelihood(lambda) + log_b_likelihood(lambda, b,b_length);
     return res;
 }
+
+/* set the posterior field in the node structrue.*/
+void set_posterior(unsigned long int *b_counts, unsigned long int denominator, knhx1_t *tree)
+{
+    int i;
+    knhx1_t *p;
+    for(i = 0; i<number_branches; i++){
+        p = tree + i;
+        p->posterior = ((double) b_counts[p->index]) / denominator;
+    }
+}
+
