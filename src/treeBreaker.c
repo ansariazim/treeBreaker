@@ -237,13 +237,16 @@ int main(int argc, char *argv[]){
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
 
-    fp = fopen(output_filename,"w");
+    if ((fp = fopen(output_filename,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_filename);
+        exit(EXIT_FAILURE);
+    }
+    if (verbose) printf("Writing output file.\n");
     fprintf(fp,"%s\n",str.s);
     fclose(fp);
     free(str.s);
 
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
-    if (verbose) printf("Writing output file.\n");
     if (verbose){
         for(i = 0; i<number_branches; i++)
             printf("[%d]\t%f\n",i,((double) b_counts[i])/mcmc_counter);
