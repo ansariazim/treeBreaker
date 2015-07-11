@@ -52,7 +52,7 @@ static inline char *add_node(const char *s, knaux_t *aux, int x)
     }
     r = aux->node + (aux->n++);
     r->n = x; r->parent = -1;
-    for (p = (char*)s, nbeg = p, r->d = -1.0; *p && *p != ',' && *p != ')'; ++p) {
+    for (p = (char*)s, nbeg = p,r->posterior = -1.0, r->d = -1.0; *p && *p != ',' && *p != ')'; ++p) {
         if (*p == '[') {
             if (nend == 0) nend = p;
             do ++p; while (*p && *p != ']');
@@ -633,7 +633,7 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < n; ++i) {
         knhx1_t *p = node + i;
-        printf("[%2d] [%2d] %s\t%d\t%d\t%g", i,p->index, p->name, p->parent, p->n, p->d);
+        printf("[%2d] [%2d] \t%f\t%s\t%d\t%d\t%g", i,p->index,p->posterior, p->name, p->parent, p->n, p->d);
         for (j = 0; j < p->n; ++j)
             printf("\t%d", p->child[j]);
         putchar('\n');
