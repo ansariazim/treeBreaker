@@ -13,12 +13,14 @@
  * name: string containing the name of the node. If no name then empty string. If there is space, the name will break there.
  * index: This is sorted index that I use. For leaves it goes from 0 to n-1 and for nodes from n to 2n-2
  * pheno: the phenotype of the leaves. For internal nodes this will be set to -1. They have to be in the range 0 to K-1 if there are K distinct phenotypes.
- * d: branch length or distance to parent node. If no distance then it is set to -1. */
+ * d: branch length or distance to parent node. If no distance then it is set to -1. 
+ * posterior: Posterior probability of having a change point on the branch above the node.*/
 typedef struct {
     int parent, n,index, pheno;
     int *child;
     char *name;
     double d;
+    double posterior;
 } knhx1_t;
 
 #ifndef KSTRING_T
@@ -32,14 +34,14 @@ typedef struct __kstring_t {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /* parse the newick string and return the tree structre that is stored in knhx1_t. 
+    /* parse the newick string and return the tree structre that is stored in knhx1_t. The tree is an array of of _n nodes.
      * char *nhx: string containing the newick format. There should be no spaces and no newline characters in the string.
      * int *_n: It will contain the number of nodes on the tree including the root. They will be indexed from 0 to _n-1.
      * int *_error: not sure about this one.*/
     knhx1_t *kn_parse(const char *nhx, int *_n, int *_error);
 
-    /* reformat the newick string. remove any comments and distances for the internal nodes and return the new string.
-     * knhx1_t *node: I think this points to the start of the tree which is node 0.
+    /* write the output tree with posterior probabilities and other stuff in comments [] for all nodes.
+     * knhx1_t *node: this points to the start of the tree which is node[0].
      * int root: the index of the root node which should be from the kn_parse function output (_n-1).
      * kstring_t *s: a structure which returns the reformatted newick string in s.s */
     void kn_format(const knhx1_t *node, int root, kstring_t *s);

@@ -32,19 +32,19 @@
 #include <gsl/gsl_sf_gamma.h>
 
 static const char * help=
-        "\
+"\
         Usage: treeBreaker [OPTIONS] inputfile_tree inputfile_phenotype outputfile\n\
-            \n\
-            Options:\n\
-                -x NUM      Sets the number of iterations after burn-in (default is 50000)\n\
-                -y NUM      Sets the number of burn-in iterations (default is 50000)\n\
-                -z NUM      Sets the number of iterations between samples (default is 100)\n\
-                -S NUM      Sets the seed for the random number generator to NUM\n\
-                -v          Verbose mode\n\
-                \n";
+        \n\
+        Options:\n\
+        -x NUM      Sets the number of iterations after burn-in (default is 500000)\n\
+        -y NUM      Sets the number of burn-in iterations (default is 500000)\n\
+        -z NUM      Sets the number of iterations between samples (default is 1000)\n\
+        -S NUM      Sets the seed for the random number generator to NUM\n\
+        -v          Verbose mode\n\
+        \n";
 
 int propose_new_b(int *b,int num_branches, int * b_star);
-int count_phenos( int set[], int parents[], int b[], int pheno[], int **counts);
+int count_phenos(int **code, int par[], int b[], int pheno[], int **counts);
 double log_likelihood(int ** counts,int num_sec);
 double log_lambda_likelihood(double lambda);
 double log_b_likelihood(double lambda, int *b, double *b_length);
@@ -52,6 +52,7 @@ double propose_new_lambda(double old_lambda);
 double log_likelihood_all(int **counts, int num_sec, double lambda, int *b, double *b_lengths);
 double log_likelihood_lambda_constant(int **counts, int num_sec, int *b, double lambda,double *b_length);
 double log_likelihood_b_constant(double lambda,int *b, double *b_length);
+void set_posterior(unsigned long int *b_counts, unsigned long int denominator, knhx1_t *tree);
 
 
 
@@ -69,7 +70,9 @@ int main(int argc, char *argv[]){
     kstring_t str;
     char *newick_str = NULL;
     int bytes_read;
-    FILE * fp;
+    FILE *fp, *fp_lambda, *fp_b;
+    char *output_file_lambda = "lambda_mcmc_state_file.txt";
+    char *output_file_b = "change_points_mcmc_state_file.txt";
     char **names;
     int *temp_phenos;
     int *phenos;
@@ -78,11 +81,11 @@ int main(int argc, char *argv[]){
     int **leaves_under;
     int *n_leaves_under;
     int *b, *b_star;
-    int *sections, num_sec;
+    int *sections, num_sec, recording_counter;
     int **counts,temp_counter=0;
     double old_log_likelihood, lambda,temp;
     double proposal_log_likelihood, proposal_lambda;
-    unsigned long int *b_counts;
+    unsigned long int *b_counts, denominator;
     int postburn=500000;
     int burn=500000;
     int thin=1000;
@@ -90,20 +93,23 @@ int main(int argc, char *argv[]){
     unsigned int seed=0;
     bool verbose=false;
     int c;
+    int **code;
+
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
-    switch (c)
-    {
-        case('x'):postburn=atoi(optarg);break;
-        case('y'):burn=atoi(optarg);break;
-        case('z'):thin=atoi(optarg);break;
-	case('S'):seeded=true;seed=atoi(optarg);break;
-	case('v'):verbose=true;break;
-	default:fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);
-    }
+        switch (c)
+        {
+            case('x'):postburn=atoi(optarg);break;
+            case('y'):burn=atoi(optarg);break;
+            case('z'):thin=atoi(optarg);break;
+            case('S'):seeded=true;seed=atoi(optarg);break;
+            case('v'):verbose=true;break;
+            default:fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);
+        }
     if (argc-optind!=3) {fprintf(stderr,"Syntax error.\n%s",help);exit(EXIT_FAILURE);}
     r = gsl_rng_alloc(gsl_rng_mt19937);
     if (seeded==true) gsl_rng_set(r,seed); else gsl_rng_set(r,time(NULL));
     mcmc_counter = postburn+burn;
+    recording_counter = burn;
 
     newick_str = get_newick_from_file(argv[optind++]);
     if (verbose) printf("%s\n",newick_str);
@@ -117,10 +123,15 @@ int main(int argc, char *argv[]){
     char * output_filename = argv[optind++];
 
     if (verbose) for(i = 0; i<number_branches; i++){ 
-          printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branches_len[i]);
-          for (j = 0; j < n_leaves_under[i]; ++j)
-          printf("\t%d", leaves_under[i][j]);
-          putchar('\n');
+        printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branches_len[i]);
+        for (j = 0; j < n_leaves_under[i]; ++j)
+            printf("\t%d", leaves_under[i][j]);
+        putchar('\n');
+    }
+
+    if ((code = malloc(number_branches *sizeof(int *))) == NULL){
+        fprintf(stderr,"Out of memory. Could not assign memory when setting code.");
+        exit(EXIT_FAILURE);
     }
 
     if ((b_counts = calloc(number_branches, sizeof(unsigned long int))) == NULL){
@@ -156,7 +167,7 @@ int main(int argc, char *argv[]){
             fprintf(stderr,"Out of memory. Could not allocate enough memory initializing counts[i].\n");
             exit(EXIT_FAILURE);
         }
-    num_sec = count_phenos(sections, parents, b, phenos, counts);
+    num_sec = count_phenos(code, parents, b, phenos, counts);
     /* let's calculate the total length of branches on the tree. */
     T = 0.0;
     for(i = 0; i < number_branches-1; i++)
@@ -175,27 +186,37 @@ int main(int argc, char *argv[]){
           printf("The value of proposed lambda is:%e\n",temp);*/
     old_log_likelihood = log_likelihood_all(counts,num_sec, lambda, b, branches_len);
     for(i = 0;i <num_sec;i++)
-            for (j = 0; j<number_phenotypes;j++)
-                counts[i][j] = 0;
+        for (j = 0; j<number_phenotypes;j++)
+            counts[i][j] = 0;
 
-/*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
+    /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
     /* let's do the mcmc now. */
+    denominator = 0;
+    if ((fp_lambda = fopen(output_file_lambda,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_file_lambda);
+        exit(EXIT_FAILURE);
+    }
+    if ((fp_b = fopen(output_file_b,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_file_b);
+        exit(EXIT_FAILURE);
+    }
+
     for(i = 0; i<mcmc_counter; i++){
         if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0)
         {printf("\b\b\b\b\b# %3d%%",i*100/mcmc_counter);fflush(0);}
         if (i+1==mcmc_counter) {printf("\b\b\b\b\b# 100%%\n");fflush(0);}
 
         changed_branch = propose_new_b(b,number_branches, b_star);
-        
-/*        printf("proposed changed branch is: %d\n",changed_branch);
-        for(j = 0; j<number_branches; j++)
-            printf("%d\t%d\n",j,b_star[j]);
-        printf("\n");*/
-        
-        num_sec = count_phenos(sections, parents, b_star, phenos, counts);
+
+        /*        printf("proposed changed branch is: %d\n",changed_branch);
+                  for(j = 0; j<number_branches; j++)
+                  printf("%d\t%d\n",j,b_star[j]);
+                  printf("\n");*/
+
+        num_sec = count_phenos(code, parents, b_star, phenos, counts);
 
         /*for (j = 0; j<num_sec; j++)
-            printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
+          printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
 
         proposal_log_likelihood = log_likelihood_all(counts,num_sec,lambda,b_star,branches_len);
         if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
@@ -206,12 +227,10 @@ int main(int argc, char *argv[]){
         for(j = 0;j <num_sec;j++)
             for (k = 0; k<number_phenotypes;k++)
                 counts[j][k] = 0;
-        for(j = 0;j <number_branches; j++)
-            b_counts[j] += b[j];
 
         proposal_lambda = propose_new_lambda(lambda);
         if (proposal_lambda > 0.0){
-            num_sec = count_phenos(sections, parents, b, phenos, counts);
+            num_sec = count_phenos(code, parents, b, phenos, counts);
             proposal_log_likelihood = log_likelihood_all(counts,num_sec,proposal_lambda,b,branches_len);
             if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
                 lambda = proposal_lambda;
@@ -219,18 +238,42 @@ int main(int argc, char *argv[]){
             }
             for(j = 0;j <num_sec;j++)
                 for (k = 0; k<number_phenotypes;k++)
-                     counts[j][k] = 0;
+                    counts[j][k] = 0;
         }
-        /* we need to put something in here later */
-        
+
+        if (i == recording_counter){
+            for(j = 0;j <number_branches; j++)
+                b_counts[j] += b[j];
+            recording_counter += thin;
+            denominator++;
+            for(k = 0; k < number_branches-1; k++)
+                fprintf(fp_b,"%i\t",b[k]);
+            fprintf(fp_b,"%i\n",b[number_branches-1]);
+
+            fprintf(fp_lambda,"%g\n",lambda);
+        }
     }
+    fclose(fp_b);
+    fclose(fp_lambda);
+ /*   denominator = mcmc_counter;*/
+    set_posterior(b_counts, denominator, tree);
+    str.l = str.m = 0; str.s = 0;
+    kn_format(tree, number_branches - 1, &str);
+
+    if ((fp = fopen(output_filename,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_filename);
+        exit(EXIT_FAILURE);
+    }
+    if (verbose) printf("Writing output file.\n");
+    fprintf(fp,"%s\n",str.s);
+    fclose(fp);
+    free(str.s);
 
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
-    if (verbose) printf("Writing output file.\n");
-    FILE * f=fopen(output_filename,"w");
-    for(i = 0; i<number_branches; i++)
-        fprintf(f,"[%d]\t%e\n",i,((double) b_counts[i])/mcmc_counter);
-    fclose(f);
+    if (verbose){
+        for(i = 0; i<number_branches; i++)
+            printf("[%d]\t%f\n",i,((double) b_counts[i])/mcmc_counter);
+    }
 
     /*for(i = 0; i<number_branches; i++)
       printf("b are: [%d]\t%d\n",i,b[i]);
@@ -258,38 +301,38 @@ int main(int argc, char *argv[]){
 
     /* my debugging code.*/
 
-   /*    for(i = 0; i<number_leaves; i++){
+    /*    for(i = 0; i<number_leaves; i++){
           printf("%s\t%d\n",names[i],temp_phenos[i]);
           }
 
-          printf("number of nodes on the tree is %d\n",number_branches);
-          for(i = 0; i<number_branches; i++){
-          knhx1_t *p = tree + i;
-          printf("[%3d] %10s\t%3d\t%3d\t%4g", i, p->name, p->parent, p->n, p->d);
-          for (j = 0; j < p->n; ++j)
-          printf("\t%d", p->child[j]);
-          putchar('\n');
-          }
-          printf("\n");
+          printf("number of nodes on the tree is %d\n",number_branches);*/
+    /*          for(i = 0; i<number_branches; i++){
+                knhx1_t *p = tree + i;
+                printf("[%3d] [%3d] %5f\t%10s\t%3d\t%3d\t%4g", i,p->index,p->posterior, p->name, p->parent, p->n, p->d);
+                for (j = 0; j < p->n; ++j)
+                printf("\t%d", p->child[j]);
+                putchar('\n');
+                }
+                printf("\n");*/
+    /*
+       for(i = 0; i<number_branches; i++){ 
+       printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branchs_len[i]);
+       for (j = 0; j < n_leaves_under[i]; ++j)
+       printf("\t%d", leaves_under[i][j]);
+       putchar('\n');
+       }
 
-          for(i = 0; i<number_branches; i++){ 
-          printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branchs_len[i]);
-          for (j = 0; j < n_leaves_under[i]; ++j)
-          printf("\t%d", leaves_under[i][j]);
-          putchar('\n');
-          }
-
-          for (i = 0; i<number_leaves; i++){
-          printf("name is: %d, pheno is: %d\n",i,phenos[i]);
-          }
+       for (i = 0; i<number_leaves; i++){
+       printf("name is: %d, pheno is: %d\n",i,phenos[i]);
+       }
 
 
-          for(i = 0; i< number_branches; i++){
-          if(isleaf(tree+i))
-          printf("node %d is a leaf.\n",(tree+i)->index);
-          }
-          printf("total number of leaves on this tree is %d.\n",get_number_leaves(tree,number_branches));
-          */
+       for(i = 0; i< number_branches; i++){
+       if(isleaf(tree+i))
+       printf("node %d is a leaf.\n",(tree+i)->index);
+       }
+       printf("total number of leaves on this tree is %d.\n",get_number_leaves(tree,number_branches));
+       */
 
     return 0;
 }
@@ -301,16 +344,10 @@ int main(int argc, char *argv[]){
  * In addition we use an array of pointers that point to array of counts for each section. If a branch has a change point on it and it is reached by a leaf then 
  * we set the pointer to point counts and modify the counts as appropriate.
  */
-int count_phenos(int set[], int par[], int b[], int pheno[], int **counts)
+int count_phenos(int **code, int par[], int b[], int pheno[], int **counts)
 {
     int i, j, p;
     /*int set[N] = {0};*/
-    int **code;
-    /*    printf("number_branches: %d and number_leaves: %d.\n",number_branches,number_leaves);*/
-    if ((code = malloc(number_branches *sizeof(int *))) == NULL){
-        fprintf(stderr,"Out of memory. Could not assign memory when setting code.");
-        exit(EXIT_FAILURE);
-    }
     for (i = 0; i<number_branches; i++)
         code[i] = NULL;
 
@@ -322,7 +359,6 @@ int count_phenos(int set[], int par[], int b[], int pheno[], int **counts)
             p = par[p];
         /*printf("At leaf %d and parent is %d.\n",i,p);*/
 
-        set[i] = p;
         if (!code[p])
         {
             code[p] = &counts[j][0];
@@ -346,7 +382,7 @@ int propose_new_b(int *b,int num_branches, int *b_star)
 {
     int j;
     int i = gsl_rng_uniform_int(r,num_branches-1);
-/*    i = 23;*/
+    /*    i = 23;*/
     for(j = 0; j < num_branches; j++)
         b_star[j] = b[j];
     b_star[i] = ! b_star[i];
@@ -426,3 +462,15 @@ double log_likelihood_b_constant(double lambda,int *b, double *b_length)
     res = log_lambda_likelihood(lambda) + log_b_likelihood(lambda, b,b_length);
     return res;
 }
+
+/* set the posterior field in the node structrue.*/
+void set_posterior(unsigned long int *b_counts, unsigned long int denominator, knhx1_t *tree)
+{
+    int i;
+    knhx1_t *p;
+    for(i = 0; i<number_branches; i++){
+        p = tree + i;
+        p->posterior = ((double) b_counts[p->index]) / denominator;
+    }
+}
+
