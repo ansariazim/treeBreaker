@@ -206,6 +206,7 @@ void kn_format(const knhx1_t *node, int root, kstring_t *s) // TODO: get rid of 
 {
     char numbuf[128];
     format_node_recur(node, &node[root], s, numbuf);
+    kputsn(";",1,s);
 }
 
 int isleaf( knhx1_t *tree){
@@ -613,7 +614,7 @@ void set_pheno_in_tree(knhx1_t *tree, const int n_nodes, const int number_leaves
 }
 
 
-/*#define KNHX_MAIN */
+#define KNHX_MAIN 
 #ifdef KNHX_MAIN
 int main(int argc, char *argv[])
 {
