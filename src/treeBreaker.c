@@ -70,7 +70,9 @@ int main(int argc, char *argv[]){
     kstring_t str;
     char *newick_str = NULL;
     int bytes_read;
-    FILE * fp;
+    FILE *fp, *fp_lambda, *fp_b;
+    char *output_file_lambda = "lambda_mcmc_state_file.txt";
+    char *output_file_b = "change_points_mcmc_state_file.txt";
     char **names;
     int *temp_phenos;
     int *phenos;
@@ -190,6 +192,15 @@ int main(int argc, char *argv[]){
     /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
     /* let's do the mcmc now. */
     denominator = 0;
+    if ((fp_lambda = fopen(output_file_lambda,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_file_lambda);
+        exit(EXIT_FAILURE);
+    }
+    if ((fp_b = fopen(output_file_b,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_file_b);
+        exit(EXIT_FAILURE);
+    }
+
     for(i = 0; i<mcmc_counter; i++){
         if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0)
         {printf("\b\b\b\b\b# %3d%%",i*100/mcmc_counter);fflush(0);}
@@ -216,12 +227,6 @@ int main(int argc, char *argv[]){
         for(j = 0;j <num_sec;j++)
             for (k = 0; k<number_phenotypes;k++)
                 counts[j][k] = 0;
-        if (i == recording_counter){
-            for(j = 0;j <number_branches; j++)
-                b_counts[j] += b[j];
-            recording_counter += thin;
-            denominator++;
-        }
 
         proposal_lambda = propose_new_lambda(lambda);
         if (proposal_lambda > 0.0){
@@ -235,9 +240,21 @@ int main(int argc, char *argv[]){
                 for (k = 0; k<number_phenotypes;k++)
                     counts[j][k] = 0;
         }
-        /* we need to put something in here later */
 
+        if (i == recording_counter){
+            for(j = 0;j <number_branches; j++)
+                b_counts[j] += b[j];
+            recording_counter += thin;
+            denominator++;
+            for(k = 0; k < number_branches-1; k++)
+                fprintf(fp_b,"%i\t",b[k]);
+            fprintf(fp_b,"%i\n",b[number_branches-1]);
+
+            fprintf(fp_lambda,"%g\n",lambda);
+        }
     }
+    fclose(fp_b);
+    fclose(fp_lambda);
  /*   denominator = mcmc_counter;*/
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
