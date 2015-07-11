@@ -187,7 +187,7 @@ static void format_node_recur(const knhx1_t *node, const knhx1_t *p, kstring_t *
         }
         kputc(')', s);
         if (p->name) {
-            sprintf(numbuf,"%s[%d]",p->name,p->index);
+            sprintf(numbuf,"%s[index=%d,posterior=%f]",p->name,p->index,p->posterior);
             kputsn(numbuf, strlen(numbuf), s);
         }
         if (p->d >= 0) {
@@ -195,11 +195,13 @@ static void format_node_recur(const knhx1_t *node, const knhx1_t *p, kstring_t *
             kputsn(numbuf, strlen(numbuf), s);
         }
     } else{
-            sprintf(numbuf,"%s[%d]:%g",p->name,p->index,p->d);
+            sprintf(numbuf,"%s[index=%d,pheno=%d,posterior=%f]:%g",p->name,p->index,p->pheno,p->posterior,p->d);
             kputsn(numbuf, strlen(numbuf), s);
     }
 }
 
+/* This function outputs the newick str with comments. It has to be used after the set_posterior is run as it 
+ * outputs the value of the posterior in the comment for each node.*/
 void kn_format(const knhx1_t *node, int root, kstring_t *s) // TODO: get rid of recursion
 {
     char numbuf[128];
