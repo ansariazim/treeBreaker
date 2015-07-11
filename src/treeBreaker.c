@@ -44,7 +44,7 @@ static const char * help=
         \n";
 
 int propose_new_b(int *b,int num_branches, int * b_star);
-int count_phenos( int set[], int parents[], int b[], int pheno[], int **counts);
+int count_phenos(int **code, int par[], int b[], int pheno[], int **counts);
 double log_likelihood(int ** counts,int num_sec);
 double log_lambda_likelihood(double lambda);
 double log_b_likelihood(double lambda, int *b, double *b_length);
@@ -91,6 +91,8 @@ int main(int argc, char *argv[]){
     unsigned int seed=0;
     bool verbose=false;
     int c;
+    int **code;
+
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
         switch (c)
         {
@@ -122,6 +124,11 @@ int main(int argc, char *argv[]){
         for (j = 0; j < n_leaves_under[i]; ++j)
             printf("\t%d", leaves_under[i][j]);
         putchar('\n');
+    }
+
+    if ((code = malloc(number_branches *sizeof(int *))) == NULL){
+        fprintf(stderr,"Out of memory. Could not assign memory when setting code.");
+        exit(EXIT_FAILURE);
     }
 
     if ((b_counts = calloc(number_branches, sizeof(unsigned long int))) == NULL){
@@ -157,7 +164,7 @@ int main(int argc, char *argv[]){
             fprintf(stderr,"Out of memory. Could not allocate enough memory initializing counts[i].\n");
             exit(EXIT_FAILURE);
         }
-    num_sec = count_phenos(sections, parents, b, phenos, counts);
+    num_sec = count_phenos(code, parents, b, phenos, counts);
     /* let's calculate the total length of branches on the tree. */
     T = 0.0;
     for(i = 0; i < number_branches-1; i++)
@@ -193,7 +200,7 @@ int main(int argc, char *argv[]){
                   printf("%d\t%d\n",j,b_star[j]);
                   printf("\n");*/
 
-        num_sec = count_phenos(sections, parents, b_star, phenos, counts);
+        num_sec = count_phenos(code, parents, b_star, phenos, counts);
 
         /*for (j = 0; j<num_sec; j++)
           printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
@@ -212,7 +219,7 @@ int main(int argc, char *argv[]){
 
         proposal_lambda = propose_new_lambda(lambda);
         if (proposal_lambda > 0.0){
-            num_sec = count_phenos(sections, parents, b, phenos, counts);
+            num_sec = count_phenos(code, parents, b, phenos, counts);
             proposal_log_likelihood = log_likelihood_all(counts,num_sec,proposal_lambda,b,branches_len);
             if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
                 lambda = proposal_lambda;
@@ -238,8 +245,8 @@ int main(int argc, char *argv[]){
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
     if (verbose) printf("Writing output file.\n");
     if (verbose){
-    for(i = 0; i<number_branches; i++)
-        printf("[%d]\t%f\n",i,((double) b_counts[i])/mcmc_counter);
+        for(i = 0; i<number_branches; i++)
+            printf("[%d]\t%f\n",i,((double) b_counts[i])/mcmc_counter);
     }
 
     /*for(i = 0; i<number_branches; i++)
@@ -273,33 +280,33 @@ int main(int argc, char *argv[]){
           }
 
           printf("number of nodes on the tree is %d\n",number_branches);*/
-/*          for(i = 0; i<number_branches; i++){
-          knhx1_t *p = tree + i;
-          printf("[%3d] [%3d] %5f\t%10s\t%3d\t%3d\t%4g", i,p->index,p->posterior, p->name, p->parent, p->n, p->d);
-          for (j = 0; j < p->n; ++j)
-          printf("\t%d", p->child[j]);
-          putchar('\n');
-          }
-          printf("\n");*/
-/*
-          for(i = 0; i<number_branches; i++){ 
-          printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branchs_len[i]);
-          for (j = 0; j < n_leaves_under[i]; ++j)
-          printf("\t%d", leaves_under[i][j]);
-          putchar('\n');
-          }
+    /*          for(i = 0; i<number_branches; i++){
+                knhx1_t *p = tree + i;
+                printf("[%3d] [%3d] %5f\t%10s\t%3d\t%3d\t%4g", i,p->index,p->posterior, p->name, p->parent, p->n, p->d);
+                for (j = 0; j < p->n; ++j)
+                printf("\t%d", p->child[j]);
+                putchar('\n');
+                }
+                printf("\n");*/
+    /*
+       for(i = 0; i<number_branches; i++){ 
+       printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branchs_len[i]);
+       for (j = 0; j < n_leaves_under[i]; ++j)
+       printf("\t%d", leaves_under[i][j]);
+       putchar('\n');
+       }
 
-          for (i = 0; i<number_leaves; i++){
-          printf("name is: %d, pheno is: %d\n",i,phenos[i]);
-          }
+       for (i = 0; i<number_leaves; i++){
+       printf("name is: %d, pheno is: %d\n",i,phenos[i]);
+       }
 
 
-          for(i = 0; i< number_branches; i++){
-          if(isleaf(tree+i))
-          printf("node %d is a leaf.\n",(tree+i)->index);
-          }
-          printf("total number of leaves on this tree is %d.\n",get_number_leaves(tree,number_branches));
-          */
+       for(i = 0; i< number_branches; i++){
+       if(isleaf(tree+i))
+       printf("node %d is a leaf.\n",(tree+i)->index);
+       }
+       printf("total number of leaves on this tree is %d.\n",get_number_leaves(tree,number_branches));
+       */
 
     return 0;
 }
@@ -311,16 +318,10 @@ int main(int argc, char *argv[]){
  * In addition we use an array of pointers that point to array of counts for each section. If a branch has a change point on it and it is reached by a leaf then 
  * we set the pointer to point counts and modify the counts as appropriate.
  */
-int count_phenos(int set[], int par[], int b[], int pheno[], int **counts)
+int count_phenos(int **code, int par[], int b[], int pheno[], int **counts)
 {
     int i, j, p;
     /*int set[N] = {0};*/
-    int **code;
-    /*    printf("number_branches: %d and number_leaves: %d.\n",number_branches,number_leaves);*/
-    if ((code = malloc(number_branches *sizeof(int *))) == NULL){
-        fprintf(stderr,"Out of memory. Could not assign memory when setting code.");
-        exit(EXIT_FAILURE);
-    }
     for (i = 0; i<number_branches; i++)
         code[i] = NULL;
 
@@ -332,7 +333,6 @@ int count_phenos(int set[], int par[], int b[], int pheno[], int **counts)
             p = par[p];
         /*printf("At leaf %d and parent is %d.\n",i,p);*/
 
-        set[i] = p;
         if (!code[p])
         {
             code[p] = &counts[j][0];
