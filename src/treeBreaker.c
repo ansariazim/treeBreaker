@@ -79,7 +79,7 @@ int main(int argc, char *argv[]){
     int **leaves_under;
     int *n_leaves_under;
     int *b, *b_star;
-    int *sections, num_sec;
+    int *sections, num_sec, recording_counter;
     int **counts,temp_counter=0;
     double old_log_likelihood, lambda,temp;
     double proposal_log_likelihood, proposal_lambda;
@@ -107,6 +107,7 @@ int main(int argc, char *argv[]){
     r = gsl_rng_alloc(gsl_rng_mt19937);
     if (seeded==true) gsl_rng_set(r,seed); else gsl_rng_set(r,time(NULL));
     mcmc_counter = postburn+burn;
+    recording_counter = burn;
 
     newick_str = get_newick_from_file(argv[optind++]);
     if (verbose) printf("%s\n",newick_str);
@@ -188,6 +189,7 @@ int main(int argc, char *argv[]){
 
     /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
     /* let's do the mcmc now. */
+    denominator = 0;
     for(i = 0; i<mcmc_counter; i++){
         if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0)
         {printf("\b\b\b\b\b# %3d%%",i*100/mcmc_counter);fflush(0);}
@@ -214,8 +216,12 @@ int main(int argc, char *argv[]){
         for(j = 0;j <num_sec;j++)
             for (k = 0; k<number_phenotypes;k++)
                 counts[j][k] = 0;
-        for(j = 0;j <number_branches; j++)
-            b_counts[j] += b[j];
+        if (i == recording_counter){
+            for(j = 0;j <number_branches; j++)
+                b_counts[j] += b[j];
+            recording_counter += thin;
+            denominator++;
+        }
 
         proposal_lambda = propose_new_lambda(lambda);
         if (proposal_lambda > 0.0){
@@ -232,7 +238,7 @@ int main(int argc, char *argv[]){
         /* we need to put something in here later */
 
     }
-    denominator = mcmc_counter;
+ /*   denominator = mcmc_counter;*/
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
