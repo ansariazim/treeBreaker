@@ -13,12 +13,14 @@
  * name: string containing the name of the node. If no name then empty string. If there is space, the name will break there.
  * index: This is sorted index that I use. For leaves it goes from 0 to n-1 and for nodes from n to 2n-2
  * pheno: the phenotype of the leaves. For internal nodes this will be set to -1. They have to be in the range 0 to K-1 if there are K distinct phenotypes.
- * d: branch length or distance to parent node. If no distance then it is set to -1. */
+ * d: branch length or distance to parent node. If no distance then it is set to -1. 
+ * posterior: Posterior probability of having a change point on the branch above the node.*/
 typedef struct {
     int parent, n,index, pheno;
     int *child;
     char *name;
     double d;
+    double posterior;
 } knhx1_t;
 
 #ifndef KSTRING_T
