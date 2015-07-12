@@ -34,3 +34,5 @@ There are also some optional arguments, which must be indicated before the three
     - index: shows which column in "change_points_mcmc_state_file.txt" matches the node. The index starts at 0.
     - pheno: for leaf nodes, the phenotype that was read from the input phenotype file.
     - posterior: the posterior probability of having a change point on the branch above the node.
+- lambda_mcmc_state_file.txt: Each line shows a value of the parameter lambda sampled in the MCMC.
+
