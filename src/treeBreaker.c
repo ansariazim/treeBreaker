@@ -70,9 +70,7 @@ int main(int argc, char *argv[]){
     kstring_t str;
     char *newick_str = NULL;
     int bytes_read;
-    FILE *fp, *fp_lambda, *fp_b;
-    char *output_file_lambda = "lambda_mcmc_state_file.txt";
-    char *output_file_b = "change_points_mcmc_state_file.txt";
+    FILE *fp;
     char **names;
     int *temp_phenos;
     int *phenos;
@@ -192,12 +190,8 @@ int main(int argc, char *argv[]){
     /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
     /* let's do the mcmc now. */
     denominator = 0;
-    if ((fp_lambda = fopen(output_file_lambda,"w")) == NULL){
-        fprintf(stderr,"Cannot open file %s.\n",output_file_lambda);
-        exit(EXIT_FAILURE);
-    }
-    if ((fp_b = fopen(output_file_b,"w")) == NULL){
-        fprintf(stderr,"Cannot open file %s.\n",output_file_b);
+    if ((fp = fopen(output_filename,"w")) == NULL){
+        fprintf(stderr,"Cannot open file %s.\n",output_filename);
         exit(EXIT_FAILURE);
     }
 
@@ -247,23 +241,17 @@ int main(int argc, char *argv[]){
             recording_counter += thin;
             denominator++;
             for(k = 0; k < number_branches-1; k++)
-                fprintf(fp_b,"%i\t",b[k]);
-            fprintf(fp_b,"%i\n",b[number_branches-1]);
+                fprintf(fp,"%i\t",b[k]);
+            fprintf(fp,"%i\n",b[number_branches-1]);
 
-            fprintf(fp_lambda,"%g\n",lambda);
+            fprintf(fp,"%g\n",lambda);
         }
     }
-    fclose(fp_b);
-    fclose(fp_lambda);
  /*   denominator = mcmc_counter;*/
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
 
-    if ((fp = fopen(output_filename,"w")) == NULL){
-        fprintf(stderr,"Cannot open file %s.\n",output_filename);
-        exit(EXIT_FAILURE);
-    }
     if (verbose) printf("Writing output file.\n");
     fprintf(fp,"%s\n",str.s);
     fclose(fp);
