@@ -6,3 +6,5 @@ bin/treeBreaker
 src/.treeBreaker.c.swp
 
 bin/treeBreaker
+
+src/outfile

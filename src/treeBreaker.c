@@ -240,7 +240,7 @@ int main(int argc, char *argv[]){
                 b_counts[j] += b[j];
             recording_counter += thin;
             denominator++;
-            fprintf(fp,"#");
+            fprintf(fp,"#\t");
 	    for(k = 0; k < number_branches-1; k++)
                 fprintf(fp,"%i\t",b[k]);
             fprintf(fp,"%i\t",b[number_branches-1]);
