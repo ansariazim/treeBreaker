@@ -26,13 +26,12 @@ There are also some optional arguments, which must be indicated before the three
     -S NUM      Sets the seed for the random number generator to NUM
     -v          Verbose mode
 
-**Output files**
-- change_points_mcmc_state_file.txt: one line per change points array. If a branch above a node has a change point on it, then it is set to 1
-    and to 0 otherwise. The root branch (the last column) is always set to 1. To know which column matches which node on the the tree, refer to
-    the "index" attribute of each node in the output newick string in "outfile".
-- outfile: contains the newick string of the tree with comments in []. Each node can have 3 attributes:
-    - index: shows which column in "change_points_mcmc_state_file.txt" matches the node. The index starts at 0.
+**Output file**
+
+The output file contains: 
+- One line for each MCMC sample, with columns indicating whether branches have a changepoint on them (1) or not (0). To know which column matches which node on the tree, refer to the "index" attribute described below. The last column contains the values of lambda.
+- The last line contains the newick string of the tree with comments in square brackets. Each node can have 3 attributes:
+    - index: shows which column in the first part of the output file matches the node. The index starts at 0.
     - pheno: for leaf nodes, the phenotype that was read from the input phenotype file.
     - posterior: the posterior probability of having a change point on the branch above the node.
-- lambda_mcmc_state_file.txt: Each line shows a value of the parameter lambda sampled in the MCMC.
 
