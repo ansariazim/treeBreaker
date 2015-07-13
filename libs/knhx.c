@@ -187,7 +187,7 @@ static void format_node_recur(const knhx1_t *node, const knhx1_t *p, kstring_t *
         }
         kputc(')', s);
         if (p->name) {
-            sprintf(numbuf,"%s[index=%d,posterior=%f]",p->name,p->index,p->posterior);
+            sprintf(numbuf,"%s[index=%d|posterior=%f]",p->name,p->index,p->posterior);
             kputsn(numbuf, strlen(numbuf), s);
         }
         if (p->d >= 0) {
@@ -195,7 +195,7 @@ static void format_node_recur(const knhx1_t *node, const knhx1_t *p, kstring_t *
             kputsn(numbuf, strlen(numbuf), s);
         }
     } else{
-            sprintf(numbuf,"%s[index=%d,pheno=%d,posterior=%f]:%g",p->name,p->index,p->pheno,p->posterior,p->d);
+            sprintf(numbuf,"%s[index=%d|pheno=%d|posterior=%f]:%g",p->name,p->index,p->pheno,p->posterior,p->d);
             kputsn(numbuf, strlen(numbuf), s);
     }
 }
