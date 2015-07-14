@@ -241,13 +241,13 @@ int main(int argc, char *argv[]){
             recording_counter += thin;
             denominator++;
             fprintf(fp,"#\t");
-	    for(k = 0; k < number_branches-1; k++)
+            for(k = 0; k < number_branches-1; k++)
                 fprintf(fp,"%i\t",b[k]);
             fprintf(fp,"%i\t",b[number_branches-1]);
             fprintf(fp,"%g\n",lambda);
         }
     }
- /*   denominator = mcmc_counter;*/
+    /*   denominator = mcmc_counter;*/
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
