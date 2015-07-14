@@ -228,7 +228,7 @@ static char * remove_space(char *old_str){
     int str_len = strlen(old_str);
     char *temp ; 
     char *new_str;
-    int i, j, k;
+    int i, j;
     if((temp = malloc(str_len+1)) == NULL){
         fprintf(stderr,"Out of memory when removing white spaces from the string.\n");
         exit(EXIT_FAILURE);
@@ -309,6 +309,7 @@ char * get_newick_from_file(char *file_name){
 
     temp = read_text_file(file_name);
     newick_str = remove_space(temp);
+    free(temp);
     /* let's ensure the string ends with ; if not then not valid newick str. */
     if (newick_str[strlen(newick_str)-1] != ';'){
         fprintf(stderr, "Not a valid newick string. A newick string should finish with \";\".\n");
@@ -555,7 +556,7 @@ void get_tree_data(knhx1_t *tree, const int n_nodes, const int number_leaves, in
 }
 
 void get_leaves_under(int *par, int ***leaves_under, int **n_leaves_under, const int number_leaves, const int n_nodes){
-    int p, leaf, counter,i;
+    int p, leaf,i;
     int **tmp_leaves_under = NULL;
     int *tmp_n_leaves_under = NULL;
 

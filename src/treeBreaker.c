@@ -69,7 +69,6 @@ int main(int argc, char *argv[]){
     int i,j,k, mcmc_counter, changed_branch;
     kstring_t str;
     char *newick_str = NULL;
-    int bytes_read;
     FILE *fp;
     char **names;
     int *temp_phenos;
@@ -81,7 +80,7 @@ int main(int argc, char *argv[]){
     int *b, *b_star;
     int *sections, num_sec, recording_counter;
     int **counts,temp_counter=0;
-    double old_log_likelihood, lambda,temp;
+    double old_log_likelihood, lambda;
     double proposal_log_likelihood, proposal_lambda;
     unsigned long int *b_counts, denominator;
     int postburn=500000;
@@ -330,6 +329,16 @@ int main(int argc, char *argv[]){
     for(i = 0; i<number_branches; i++)
         free(counts[i]);
     free(counts);
+    free(newick_str);
+    for (i = 0; i<number_leaves;i++) free(names[i]);
+    free(names);
+    free(temp_phenos);
+    free(parents);
+    free(branches_len);
+    free(phenos);
+    for (i=0;i<number_branches;i++) free(leaves_under[i]);
+    free(leaves_under);
+    free(n_leaves_under);
 
     return 0;
 }
