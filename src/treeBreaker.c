@@ -89,9 +89,9 @@ int main(int argc, char *argv[]){
     bool seeded=false;
     unsigned int seed=0;
     bool verbose=false;
-    int c;
+    bool root_binary_flag = false;
+    int c,node1_index, node2_index, long_node, short_node;
     int **code;
-
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
         switch (c)
         {
@@ -117,6 +117,31 @@ int main(int argc, char *argv[]){
     set_pheno_in_tree(tree, number_branches, number_leaves, names, temp_phenos);
     get_tree_data(tree, number_branches,number_leaves, &parents, &branches_len,&phenos);
     get_leaves_under(parents, &leaves_under, &n_leaves_under, number_leaves, number_branches);
+
+    /* the way to have an unrooted tree is as follows:
+     * check to make sure that the root node has only two nodes under it (binary).
+     * set the length of the branch for the smaller of the two branches to zero.
+     * set the lenght of the longer branch so that it equals to the sum of the length of the two branches.
+     * at every iteration of mcmc check to see if the branch with zero length has been set and if that is the case then
+     * reject the move and stay at the previous state. */
+
+    if ((tree+number_branches-1)->n == 2){
+        if (verbose) printf("The root has two branches under it.\n");
+        root_binary_flag = true;
+        node1_index = ((tree+(tree+number_branches-1)->child[0])->index);
+        node2_index = ((tree+(tree+number_branches-1)->child[1])->index);
+        if (branches_len[node1_index] >= branches_len[node2_index]){
+            long_node = node1_index;
+            short_node = node2_index;
+        }else{
+            long_node = node2_index;
+            short_node = node1_index;
+        }
+        branches_len[long_node] += branches_len[short_node];
+        branches_len[short_node] = 0;
+        if (verbose) printf("The long branch now is: %f and short branch is: %f.\n",branches_len[long_node],branches_len[short_node]  );
+    }
+
     char * output_filename = argv[optind++];
 
     if (verbose) for(i = 0; i<number_branches; i++){ 
@@ -200,26 +225,28 @@ int main(int argc, char *argv[]){
         if (i+1==mcmc_counter) {printf("\b\b\b\b\b# 100%%\n");fflush(0);}
 
         changed_branch = propose_new_b(b,number_branches, b_star);
+        if (!(root_binary_flag && (changed_branch == short_node))){
 
-        /*        printf("proposed changed branch is: %d\n",changed_branch);
-                  for(j = 0; j<number_branches; j++)
-                  printf("%d\t%d\n",j,b_star[j]);
-                  printf("\n");*/
+            /*        printf("proposed changed branch is: %d\n",changed_branch);
+                      for(j = 0; j<number_branches; j++)
+                      printf("%d\t%d\n",j,b_star[j]);
+                      printf("\n");*/
 
-        num_sec = count_phenos(code, parents, b_star, phenos, counts);
+            num_sec = count_phenos(code, parents, b_star, phenos, counts);
 
-        /*for (j = 0; j<num_sec; j++)
-          printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
+            /*for (j = 0; j<num_sec; j++)
+              printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
 
-        proposal_log_likelihood = log_likelihood_all(counts,num_sec,lambda,b_star,branches_len);
-        if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
-            b[changed_branch] = b_star[changed_branch];
-            old_log_likelihood = proposal_log_likelihood;
-            temp_counter++;
+            proposal_log_likelihood = log_likelihood_all(counts,num_sec,lambda,b_star,branches_len);
+            if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
+                b[changed_branch] = b_star[changed_branch];
+                old_log_likelihood = proposal_log_likelihood;
+                temp_counter++;
+            }
+            for(j = 0;j <num_sec;j++)
+                for (k = 0; k<number_phenotypes;k++)
+                    counts[j][k] = 0;
         }
-        for(j = 0;j <num_sec;j++)
-            for (k = 0; k<number_phenotypes;k++)
-                counts[j][k] = 0;
 
         proposal_lambda = propose_new_lambda(lambda);
         if (proposal_lambda > 0.0){
@@ -259,7 +286,7 @@ int main(int argc, char *argv[]){
     if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
     if (verbose){
         for(i = 0; i<number_branches; i++)
-            printf("[%d]\t%f\n",i,((double) b_counts[i])/mcmc_counter);
+            printf("[%d]\t%f\n",i,((double) b_counts[i])/denominator);
     }
 
     /*for(i = 0; i<number_branches; i++)
