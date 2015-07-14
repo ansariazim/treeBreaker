@@ -322,6 +322,15 @@ int main(int argc, char *argv[]){
        printf("total number of leaves on this tree is %d.\n",get_number_leaves(tree,number_branches));
        */
 
+    free(code);
+    free(b_counts);
+    free(b);
+    free(b_star);
+    free(sections);
+    for(i = 0; i<number_branches; i++)
+        free(counts[i]);
+    free(counts);
+
     return 0;
 }
 
