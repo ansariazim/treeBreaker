@@ -53,13 +53,17 @@ double log_likelihood_all(int **counts, int num_sec, double lambda, int *b, doub
 double log_likelihood_lambda_constant(int **counts, int num_sec, int *b, double lambda,double *b_length);
 double log_likelihood_b_constant(double lambda,int *b, double *b_length);
 void set_posterior(unsigned long int *b_counts, unsigned long int denominator, knhx1_t *tree);
+double m0_propose_lambda(void);
+void m0_propose_b(int b_star[], double branches_len[]);
+double calculate_log_evidence_model_0(int pheno[]);
+
 
 
 
 int number_branches;
 int number_leaves;
 int number_phenotypes;
-double T, log_T;
+double T, log_T, inv_T;
 gsl_rng *r;
 
 
@@ -82,7 +86,7 @@ int main(int argc, char *argv[]){
     int **counts,temp_counter=0;
     double old_log_likelihood, lambda;
     double proposal_log_likelihood, proposal_lambda;
-    unsigned long int *b_counts, denominator;
+    unsigned long int *b_counts, denominator, model_0_counter=0, model_1_counter=0;
     int postburn=500000;
     int burn=500000;
     int thin=1000;
@@ -91,6 +95,7 @@ int main(int argc, char *argv[]){
     bool verbose=false;
     bool root_binary_flag = false;
     int c,node1_index, node2_index, long_node, short_node;
+    double prob_move_1_to_2 = 0.5, prob_move_2_to_1 = 0.05;
     int **code;
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
         switch (c)
@@ -195,6 +200,7 @@ int main(int argc, char *argv[]){
     for(i = 0; i < number_branches-1; i++)
         T += branches_len[i];
     log_T = log(T);
+    inv_T = 1 / T;
     lambda = 1 / T;
     /*    b[30] = 1;*/
 
@@ -506,4 +512,33 @@ void set_posterior(unsigned long int *b_counts, unsigned long int denominator, k
         p->posterior = ((double) b_counts[p->index]) / denominator;
     }
 }
+/* calculate the evidence [p(D|m_1)] for model r0.
+ * under model 0 there are no change points on the tree. */
+double calculate_log_evidence_model_0(int pheno[]){
+    double res;
+    int i, j, counter;
+    res = gsl_sf_lngamma(number_phenotypes) - gsl_sf_lngamma(number_leaves + number_phenotypes);
+    for (i = 0 ; i<number_phenotypes; i++){
+        counter = 0;
+        for (j = 0; j < number_leaves; j++){
+            if (pheno[j] == i)
+                counter += 1;
+        }
+        res += gsl_sf_lngamma(counter + 1);
+    }
+    return res;
+}
+/* propose lambda from the prior on lambda when in model 0. */
+double m0_propose_lambda(void){
+    return gsl_ran_exponential(r,inv_T);
+}
 
+/*propose b from the prior on b when in model 0 */
+void m0_propose_b(int b_star[], double branches_len[]){
+    int i;
+    for (i = 0; i < number_branches; i++)
+        if (gsl_rng_uniform(r) < exp(-inv_T * branches_len[i]))
+            b_star[i] = 0;
+        else
+            b_star[i] = 1;
+}
