@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include <stdio.h>
+#include <float.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -46,26 +47,22 @@ static const char * help=
 int propose_new_b(int *b,int num_branches, int * b_star);
 int count_phenos(int **code, int par[], int b[], int pheno[], int **counts);
 double log_likelihood(int ** counts,int num_sec);
-double log_lambda_likelihood(double lambda);
-double log_b_likelihood(double lambda, int *b, double *b_length);
+double log_lambda_prior(double lambda);
+double log_b_prior(double lambda, int *b, double *b_length);
 double propose_new_lambda(double old_lambda);
-double log_likelihood_all(int **counts, int num_sec, double lambda, int *b, double *b_lengths);
+double log_posterior(int **counts, int num_sec, double lambda, int *b, double *b_lengths);
 double log_likelihood_lambda_constant(int **counts, int num_sec, int *b, double lambda,double *b_length);
 double log_likelihood_b_constant(double lambda,int *b, double *b_length);
 void set_posterior(unsigned long int *b_counts, unsigned long int denominator, knhx1_t *tree);
 double m0_propose_lambda(void);
-void m0_propose_b(int b_star[], double branches_len[]);
+void m0_propose_b(int b_star[], double branches_len[], double lambda_star);
 double calculate_log_evidence_model_0(int pheno[]);
-
-
-
 
 int number_branches;
 int number_leaves;
 int number_phenotypes;
 double T, log_T, inv_T;
 gsl_rng *r;
-
 
 int main(int argc, char *argv[]){
     knhx1_t *tree;
@@ -84,9 +81,9 @@ int main(int argc, char *argv[]){
     int *b, *b_star;
     int *sections, num_sec, recording_counter;
     int **counts,temp_counter=0;
-    double old_log_likelihood, lambda;
-    double proposal_log_likelihood, proposal_lambda;
+    double  lambda, model_0_log_evidence, mh_model_0_all;
     unsigned long int *b_counts, denominator, model_0_counter=0, model_1_counter=0;
+    int model_state;
     int postburn=500000;
     int burn=500000;
     int thin=1000;
@@ -95,8 +92,11 @@ int main(int argc, char *argv[]){
     bool verbose=false;
     bool root_binary_flag = false;
     int c,node1_index, node2_index, long_node, short_node;
-    double prob_move_1_to_2 = 0.5, prob_move_2_to_1 = 0.05;
+    double prob_move_0_to_1 = 0.5, prob_move_1_to_0 = 0.05;
+    double log_prob_move_0_to_1 = log(prob_move_0_to_1), log_prob_move_1_to_0 = log(prob_move_1_to_0);
     int **code;
+    double proposal_log_likelihood, proposal_log_b_prior, proposal_log_lambda_prior, lambda_star, old_log_likelihood, old_log_b_prior, old_log_lambda_prior;
+
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
         switch (c)
         {
@@ -201,71 +201,116 @@ int main(int argc, char *argv[]){
         T += branches_len[i];
     log_T = log(T);
     inv_T = 1 / T;
-    lambda = 1 / T;
-    /*    b[30] = 1;*/
+    model_0_log_evidence = calculate_log_evidence_model_0(phenos); /* calculate the evidence for model 0 */
+    mh_model_0_all = model_0_log_evidence + log_prob_move_0_to_1;
 
-    /*    temp = log_likelihood(counts,num_sec);
-          printf("The value of log_likelihood output is:%e\n",temp);
-          temp = log_lambda_likelihood(lambda);
-          printf("The value of log_lambda_likelihood output is:%e\n",temp);
-          temp = log_b_likelihood(lambda, b, branches_len);
-          printf("The value of log_b_likelihood output is:%e\n",temp);
-          temp = propose_new_lambda(lambda);
-          printf("The value of proposed lambda is:%e\n",temp);*/
-    old_log_likelihood = log_likelihood_all(counts,num_sec, lambda, b, branches_len);
+    /* we always start in model 0 */
+    model_state = 0;
+    lambda = 0;
+    old_log_likelihood = model_0_log_evidence;
     for(i = 0;i <num_sec;i++)
         for (j = 0; j<number_phenotypes;j++)
             counts[i][j] = 0;
 
-    /*    printf("The value of the likelihood is:%e\n",old_log_likelihood);*/
-    /* let's do the mcmc now. */
     denominator = 0;
     if ((fp = fopen(output_filename,"w")) == NULL){
         fprintf(stderr,"Cannot open file %s.\n",output_filename);
         exit(EXIT_FAILURE);
     }
 
+    /* let's do the mcmc now. */
     for(i = 0; i<mcmc_counter; i++){
-        if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0)
-        {printf("\b\b\b\b\b# %3d%%",i*100/mcmc_counter);fflush(0);}
-        if (i+1==mcmc_counter) {printf("\b\b\b\b\b# 100%%\n");fflush(0);}
+        if (mcmc_counter>50 && (i)%(mcmc_counter/50)==0){
+            printf("\b\b\b\b\b# %3d%%",i*100/mcmc_counter);
+            fflush(0);
+        }
+        if (i+1==mcmc_counter){
+            printf("\b\b\b\b\b# 100%%\n");
+            fflush(0);
+        }
+        //printf("Switch started.\n");
+        switch( model_state ){
+            case 0: /* if in model 0 then: */
+                //printf("In model 0.\n");
+                if (gsl_rng_uniform(r) > prob_move_0_to_1) { /* if propose to stay in model 0 */
+                    //printf("Move from model 0 to 0 accepted.\n");
+                    model_0_counter++;
+                }else{ /* if propose to go to model 1 */
+                    //printf("Move from model 0 to 1 proposed.\n");
+                    lambda_star = m0_propose_lambda();
+                    m0_propose_b(b_star, branches_len, lambda_star); /* I have to make sure that I don't propose change points on the branch under root that has length zero.*/
+                    num_sec = count_phenos(code, parents, b_star, phenos, counts);
+                    proposal_log_likelihood = log_likelihood(counts, num_sec);
+                    if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood + log_prob_move_0_to_1 - mh_model_0_all))){ /* move to model 1 accepted */
+                        lambda = lambda_star;
+                        for(j = 0; j < number_branches; j++)
+                            b[j] = b_star[j];
+                        old_log_likelihood = proposal_log_likelihood;
+                        old_log_b_prior = log_b_prior(lambda,b,branches_len);
+                        old_log_lambda_prior = log_lambda_prior(lambda);
+                        model_1_counter++;
+                        model_state = 1;
+                        //printf("Move from 0 to 1 accepted.\n");
+                    }else{ /* move to 1 rejected, stay in model 0 */
+                        //printf("Move from 0 to 1 rejected.\n");
+                        model_0_counter++;
+                    }
+                    for(j = 0;j <num_sec;j++)
+                        for (k = 0; k<number_phenotypes;k++)
+                            counts[j][k] = 0;
+                }
+                break;
+            case 1: /* if in model 1 then */
+                //printf("In model 1.\n");
+                if (gsl_rng_uniform(r) > prob_move_1_to_0) { /* if proposed to stay in model 1: */
+                    //printf("Stay in model.\n");
+                    model_1_counter++;
+                    changed_branch = propose_new_b(b,number_branches, b_star);
+                    if (!(root_binary_flag && (branches_len[changed_branch] < DBL_EPSILON))){
+                        num_sec = count_phenos(code, parents, b_star, phenos, counts);
+                        proposal_log_likelihood = log_likelihood(counts,num_sec);
+                        proposal_log_b_prior = log_b_prior(lambda,b_star,branches_len);
+                        if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood + proposal_log_b_prior  - old_log_likelihood - old_log_b_prior ))){
+                            b[changed_branch] = b_star[changed_branch];
+                            old_log_likelihood = proposal_log_likelihood;
+                            old_log_b_prior = proposal_log_b_prior;
+                        }
+                    }
 
-        changed_branch = propose_new_b(b,number_branches, b_star);
-        if (!(root_binary_flag && (changed_branch == short_node))){
+                    lambda_star = propose_new_lambda(lambda);
+                    if (lambda_star > 0.0){
+                        proposal_log_b_prior = log_b_prior(lambda_star, b, branches_len);
+                        proposal_log_lambda_prior = log_lambda_prior(lambda_star);
+                        if (gsl_rng_uniform(r) <(exp(proposal_log_lambda_prior + proposal_log_b_prior - old_log_lambda_prior -old_log_b_prior))){
+                            lambda = lambda_star;
+                            old_log_b_prior = proposal_log_b_prior;
+                            old_log_lambda_prior = proposal_log_lambda_prior;
+                        }
+                    }
+                    for(j = 0;j <num_sec;j++)
+                        for (k = 0; k<number_phenotypes;k++)
+                            counts[j][k] = 0;
+                }else{ /* if proposed to go from model 1 to model 0 */
+                    //printf("Move from model 1 to 0 proposed.\n");
+                    if (gsl_rng_uniform(r) <(exp(mh_model_0_all - old_log_likelihood - log_prob_move_1_to_0))){
+                        //printf("Move from 1 to 0 accepted.\n");
+                        model_state = 0;
+                        model_0_counter++;
+                        lambda = 0.0; /* in model 0, lambda =0 */
+                        for(j = 0; j < number_branches-1; j++) /* in model 0 there are no change points on the tree.*/
+                            b[j] = 0;
+                        b[number_branches-1] = 1;
+                    }else{
+                        //printf("Move from 1 to 0 rejected.\n");
+                        model_1_counter++;
+                    }
 
-            /*        printf("proposed changed branch is: %d\n",changed_branch);
-                      for(j = 0; j<number_branches; j++)
-                      printf("%d\t%d\n",j,b_star[j]);
-                      printf("\n");*/
-
-            num_sec = count_phenos(code, parents, b_star, phenos, counts);
-
-            /*for (j = 0; j<num_sec; j++)
-              printf("counts are as follows:%d\t%d\n",counts[j][0],counts[j][1]);*/
-
-            proposal_log_likelihood = log_likelihood_all(counts,num_sec,lambda,b_star,branches_len);
-            if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
-                b[changed_branch] = b_star[changed_branch];
-                old_log_likelihood = proposal_log_likelihood;
-                temp_counter++;
-            }
-            for(j = 0;j <num_sec;j++)
-                for (k = 0; k<number_phenotypes;k++)
-                    counts[j][k] = 0;
+                }
+                break;
         }
 
-        proposal_lambda = propose_new_lambda(lambda);
-        if (proposal_lambda > 0.0){
-            num_sec = count_phenos(code, parents, b, phenos, counts);
-            proposal_log_likelihood = log_likelihood_all(counts,num_sec,proposal_lambda,b,branches_len);
-            if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood - old_log_likelihood))){
-                lambda = proposal_lambda;
-                old_log_likelihood = proposal_log_likelihood;
-            }
-            for(j = 0;j <num_sec;j++)
-                for (k = 0; k<number_phenotypes;k++)
-                    counts[j][k] = 0;
-        }
+        //printf("round %i finished.\n",i);
+
 
         if (i == recording_counter){
             for(j = 0;j <number_branches; j++)
@@ -283,13 +328,14 @@ int main(int argc, char *argv[]){
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
+    printf("Bayes factor of model 1 to 0 is:%f.\n",((double) model_1_counter) / model_0_counter);
 
     if (verbose) printf("Writing output file.\n");
     fprintf(fp,"%s\n",str.s);
     fclose(fp);
     free(str.s);
 
-    if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);
+    /*if (verbose) printf("Counter for acceptance is: %d\n",temp_counter);*/
     if (verbose){
         for(i = 0; i<number_branches; i++)
             printf("[%d]\t%f\n",i,((double) b_counts[i])/denominator);
@@ -449,7 +495,7 @@ double log_likelihood(int ** counts,int num_sec)
 
 /* function to calculate the log likelihood of the lambda parameter. */
 
-double log_lambda_likelihood(double lambda)
+double log_lambda_prior(double lambda)
 {
     double res;
     res = (-T * lambda) + log_T;
@@ -459,7 +505,7 @@ double log_lambda_likelihood(double lambda)
 /* add the function to calculate the log of the likelihood for the prior on the branches of the tree.
  * One thing to notice is that we don't need to do all this calculations as at each step only one branch changes and
  * we can calculate that one branch change and take off and add the changes to get the new value */
-double log_b_likelihood(double lambda, int *b, double *b_length)
+double log_b_prior(double lambda, int *b, double *b_length)
 {
     int i;
     double res = 0.0;
@@ -480,10 +526,10 @@ double propose_new_lambda(double old_lambda)
 }
 
 /* sum of all three segments of the likelihood. */
-double log_likelihood_all(int **counts, int num_sec, double lambda, int *b, double *b_lengths)
+double log_posterior(int **counts, int num_sec, double lambda, int *b, double *b_lengths)
 {
     double res;
-    res = log_likelihood(counts, num_sec) + log_lambda_likelihood(lambda) + log_b_likelihood(lambda, b,b_lengths);
+    res = log_likelihood(counts, num_sec) + log_lambda_prior(lambda) + log_b_prior(lambda, b,b_lengths);
     return res;
 }
 
@@ -491,14 +537,14 @@ double log_likelihood_all(int **counts, int num_sec, double lambda, int *b, doub
 double log_likelihood_lambda_constant(int **counts, int num_sec, int *b, double lambda,double *b_length)
 {
     double res;
-    res = log_likelihood(counts, num_sec) + log_b_likelihood(lambda, b,b_length);
+    res = log_likelihood(counts, num_sec) + log_b_prior(lambda, b,b_length);
     return res;
 }
 /* log likelihood when only lambda has changed. */
 double log_likelihood_b_constant(double lambda,int *b, double *b_length)
 {
     double res;
-    res = log_lambda_likelihood(lambda) + log_b_likelihood(lambda, b,b_length);
+    res = log_lambda_prior(lambda) + log_b_prior(lambda, b,b_length);
     return res;
 }
 
@@ -533,12 +579,17 @@ double m0_propose_lambda(void){
     return gsl_ran_exponential(r,inv_T);
 }
 
-/*propose b from the prior on b when in model 0 */
-void m0_propose_b(int b_star[], double branches_len[]){
+/*propose b from the prior on b when in model 0 
+ * Here I need to check to make sure that branches are not of length zero.
+ * I have set the length of one of the branches under the root to zero and
+ * exp(0) is not defined. This could cause a problem on some machines. */
+void m0_propose_b(int b_star[], double branches_len[], double lambda_star){
     int i;
-    for (i = 0; i < number_branches; i++)
-        if (gsl_rng_uniform(r) < exp(-inv_T * branches_len[i]))
-            b_star[i] = 0;
-        else
+    for (i = 0; i < number_branches-1; i++){
+        if ( (branches_len[i] > DBL_EPSILON) && (gsl_rng_uniform(r) > exp(-lambda_star * branches_len[i])))
             b_star[i] = 1;
+        else
+            b_star[i] = 0;
+    }
+    b_star[number_branches-1] = 1;
 }
