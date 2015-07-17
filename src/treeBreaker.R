@@ -4,7 +4,7 @@ library('ape')
 #Read the tree and information attached to it
 tree=read.tree('outfile')
 ntips=length(tree$tip.label)
-l=strsplit(tree$tip.label,'[\\]\\[\\|=]',perl=T)
+l=strsplit(tree$tip.label,'[{}|=]',perl=T)
 edge_index=rep(0,nrow(tree$edge))
 tip_pheno=rep(0,length(l))
 edge_posterior=rep(0,nrow(tree$edge))
@@ -14,7 +14,7 @@ for (i in 1:length(l)) {
   tip_pheno[i]=as.numeric(l[[i]][5])
   edge_posterior[which(tree$edge[,2]==i)]=as.numeric(l[[i]][7])
 }
-l=strsplit(tree$node.label,'[\\]\\[\\|=]',perl=T)
+l=strsplit(tree$node.label,'[{}|=]',perl=T)
 node_posterior=rep(0,length(l))
 for (i in 1:length(l)) {
   edge_index[which(tree$edge[,2]==i+ntips)]=as.numeric(l[[i]][3])
@@ -49,6 +49,7 @@ for (s in seq(nrow(states)/10,nrow(states),nrow(states)/10)) {
 }
 
 #plot the correlation between the change points
+par(mfrow=c(1,1))
 image(t(states[,-ncol(states)]), axes=FALSE)
 axis(1, at=seq(0,1,length.out=10), labels= floor(seq(0,ncol(states)-1,length.out=10) ))
 axis(2, at=seq(0,1,length.out=10), labels= floor(rev( seq(0,nrow(states),length.out=10)) ))
