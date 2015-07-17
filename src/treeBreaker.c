@@ -313,8 +313,8 @@ int main(int argc, char *argv[]){
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
-    printf("sum of the model counters is %lu. Model 0: %lu and Model 1: %lu.\n",model_0_counter + model_1_counter,model_0_counter,model_1_counter);
-    printf("Bayes factor of model 1 to 0 is:%f.\n",((double) model_1_counter) / model_0_counter);
+    if (verbose) printf("sum of the model counters is %lu. Model 0: %lu and Model 1: %lu.\n",model_0_counter + model_1_counter,model_0_counter,model_1_counter);
+    if (verbose) printf("Bayes factor of model 1 to 0 is:%f.\n",((double) model_1_counter) / model_0_counter);
 
     if (verbose) printf("Writing output file.\n");
     fprintf(fp,"%s\n",str.s);

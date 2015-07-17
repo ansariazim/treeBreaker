@@ -48,6 +48,9 @@ for (s in seq(nrow(states)/10,nrow(states),nrow(states)/10)) {
   plot.phylo(tree,tip.color=rgb(tip_pheno,0,0),edge.color=rgb(ec,0,0),edge.width=1+ec*10)
 }
 
+#Calculate Bayes Factor
+bf=length(which(lambdas>0))/length(which(lambdas==0))
+
 #plot the correlation between the change points
 par(mfrow=c(1,1))
 image(t(states[,-ncol(states)]), axes=FALSE)
