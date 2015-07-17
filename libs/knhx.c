@@ -96,6 +96,41 @@ static void set_index(knhx1_t *tree, int n_nodes){
         }
     }
 }
+/* check that all the leaves have unique names and the branch lengths are >= 0.0.
+ * if not then return error. */
+static void kn_check_tree(knhx1_t *tree, int n_nodes)
+{
+    knhx1_t *p, *q;
+    int i, j;
+    for(i = 0; i < n_nodes-1; i++){
+        p = tree + i;
+        if (isleaf(p)){
+            if (strlen(p->name) == 0){
+                fprintf(stderr, "Leaves of the tree have to be uniquely named.\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+        if(p->d < 0.0){
+            fprintf(stderr, "All branches of the tree have to have a length >= 0.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    /* let's makes sure the leaf names are unique */
+    for (i = 0; i <n_nodes; i++){
+        p = tree +i;
+        if(isleaf(p)){
+            for(j = i+1; j < n_nodes; j++){
+                q = tree +j;
+                if (isleaf(q)){
+                    if (strcmp(p->name, q->name) == 0){
+                        fprintf(stderr,"Leaf name %s is not unique.\n",p->name);
+                        exit(EXIT_FAILURE);
+                    }
+                }
+            }
+        }
+    }
+}
 
 knhx1_t *kn_parse(const char *nhx, int *_n, int *_error)
 {
@@ -145,6 +180,7 @@ knhx1_t *kn_parse(const char *nhx, int *_n, int *_error)
 ret = aux->node;
 free(aux); free(stack);
 set_index(ret,*_n);
+kn_check_tree(ret,*_n);
 return ret;
 }
 
