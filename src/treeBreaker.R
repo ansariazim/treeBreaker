@@ -47,3 +47,8 @@ for (s in seq(nrow(states)/10,nrow(states),nrow(states)/10)) {
   w=which(tree$edge[,1]==(ntips+1));if (length(w)==2) ec[w]=max(ec[w])
   plot.phylo(tree,tip.color=rgb(tip_pheno,0,0),edge.color=rgb(ec,0,0),edge.width=1+ec*10)
 }
+
+#plot the correlation between the change points
+image(t(states[,-39]), axes=FALSE)
+axis(1, at=seq(0,1,length.out=10), labels= floor(seq(0,ncol(states)-1,length.out=10) ))
+axis(2, at=seq(0,1,length.out=10), labels= floor(rev( seq(0,nrow(states),length.out=10)) ))
