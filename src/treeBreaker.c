@@ -228,31 +228,25 @@ int main(int argc, char *argv[]){
             printf("\b\b\b\b\b# 100%%\n");
             fflush(0);
         }
-        //printf("Switch started.\n");
         switch( model_state ){
             case 0: /* if in model 0 then: */
-                //printf("In model 0.\n");
                 if (gsl_rng_uniform(r) > prob_move_0_to_1) { /* if propose to stay in model 0 */
-                    //printf("Move from model 0 to 0 accepted.\n");
                     model_0_counter++;
                 }else{ /* if propose to go to model 1 */
-                    //printf("Move from model 0 to 1 proposed.\n");
                     lambda_star = m0_propose_lambda();
                     m0_propose_b(b_star, branches_len, lambda_star); /* I have to make sure that I don't propose change points on the branch under root that has length zero.*/
                     num_sec = count_phenos(code, parents, b_star, phenos, counts);
                     proposal_log_likelihood = log_likelihood(counts, num_sec);
                     if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood + log_prob_move_0_to_1 - mh_model_0_all))){ /* move to model 1 accepted */
                         lambda = lambda_star;
-                        for(j = 0; j < number_branches; j++)
+                        for(j = 0; j < number_branches-1; j++)
                             b[j] = b_star[j];
                         old_log_likelihood = proposal_log_likelihood;
                         old_log_b_prior = log_b_prior(lambda,b,branches_len);
                         old_log_lambda_prior = log_lambda_prior(lambda);
                         model_1_counter++;
                         model_state = 1;
-                        //printf("Move from 0 to 1 accepted.\n");
                     }else{ /* move to 1 rejected, stay in model 0 */
-                        //printf("Move from 0 to 1 rejected.\n");
                         model_0_counter++;
                     }
                     for(j = 0;j <num_sec;j++)
@@ -261,9 +255,7 @@ int main(int argc, char *argv[]){
                 }
                 break;
             case 1: /* if in model 1 then */
-                //printf("In model 1.\n");
                 if (gsl_rng_uniform(r) > prob_move_1_to_0) { /* if proposed to stay in model 1: */
-                    //printf("Stay in model.\n");
                     model_1_counter++;
                     changed_branch = propose_new_b(b,number_branches, b_star);
                     if (!(root_binary_flag && (branches_len[changed_branch] < DBL_EPSILON))){
@@ -291,26 +283,19 @@ int main(int argc, char *argv[]){
                         for (k = 0; k<number_phenotypes;k++)
                             counts[j][k] = 0;
                 }else{ /* if proposed to go from model 1 to model 0 */
-                    //printf("Move from model 1 to 0 proposed.\n");
                     if (gsl_rng_uniform(r) <(exp(mh_model_0_all - old_log_likelihood - log_prob_move_1_to_0))){
-                        //printf("Move from 1 to 0 accepted.\n");
                         model_state = 0;
                         model_0_counter++;
                         lambda = 0.0; /* in model 0, lambda =0 */
                         for(j = 0; j < number_branches-1; j++) /* in model 0 there are no change points on the tree.*/
                             b[j] = 0;
-                        b[number_branches-1] = 1;
                     }else{
-                        //printf("Move from 1 to 0 rejected.\n");
                         model_1_counter++;
                     }
 
                 }
                 break;
         }
-
-        //printf("round %i finished.\n",i);
-
 
         if (i == recording_counter){
             for(j = 0;j <number_branches; j++)
@@ -324,10 +309,11 @@ int main(int argc, char *argv[]){
             fprintf(fp,"%g\n",lambda);
         }
     }
-    /*   denominator = mcmc_counter;*/
+
     set_posterior(b_counts, denominator, tree);
     str.l = str.m = 0; str.s = 0;
     kn_format(tree, number_branches - 1, &str);
+    printf("sum of the model counters is %lu. Model 0: %lu and Model 1: %lu.\n",model_0_counter + model_1_counter,model_0_counter,model_1_counter);
     printf("Bayes factor of model 1 to 0 is:%f.\n",((double) model_1_counter) / model_0_counter);
 
     if (verbose) printf("Writing output file.\n");
@@ -340,65 +326,6 @@ int main(int argc, char *argv[]){
         for(i = 0; i<number_branches; i++)
             printf("[%d]\t%f\n",i,((double) b_counts[i])/denominator);
     }
-
-    /*for(i = 0; i<number_branches; i++)
-      printf("b are: [%d]\t%d\n",i,b[i]);
-      for(i = 0; i<number_leaves; i++)
-      printf("phenos are: [%d]\t%d\n",i,phenos[i]);
-      for(i = 0; i<number_branches;i++)
-      printf("parents are: [%d]\t%d\n",i,parents[i]);
-      for(i = 0; i<number_leaves;i++)
-      printf("sections are: [%d]\t%d\n",i,sections[i]);
-
-
-
-      printf("There are %d sections on this tree given b.\n",num_sec);
-      for (i = 0; i<num_sec; i++)
-      printf("counts are as follows:%d\t%d\n",counts[i][0],counts[i][1]);
-      */
-
-    /*log_likelihood_old = log_likelihood_all(counts, num_sec, lambda, b,branches_len);
-    */   
-
-
-
-    /* Now I have the parents, branchs_lens, phenos, leaves_under and n_leaves_under, I will start doing the MCMC.*/
-
-
-    /* my debugging code.*/
-
-    /*    for(i = 0; i<number_leaves; i++){
-          printf("%s\t%d\n",names[i],temp_phenos[i]);
-          }
-
-          printf("number of nodes on the tree is %d\n",number_branches);*/
-    /*          for(i = 0; i<number_branches; i++){
-                knhx1_t *p = tree + i;
-                printf("[%3d] [%3d] %5f\t%10s\t%3d\t%3d\t%4g", i,p->index,p->posterior, p->name, p->parent, p->n, p->d);
-                for (j = 0; j < p->n; ++j)
-                printf("\t%d", p->child[j]);
-                putchar('\n');
-                }
-                printf("\n");*/
-    /*
-       for(i = 0; i<number_branches; i++){ 
-       printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branchs_len[i]);
-       for (j = 0; j < n_leaves_under[i]; ++j)
-       printf("\t%d", leaves_under[i][j]);
-       putchar('\n');
-       }
-
-       for (i = 0; i<number_leaves; i++){
-       printf("name is: %d, pheno is: %d\n",i,phenos[i]);
-       }
-
-
-       for(i = 0; i< number_branches; i++){
-       if(isleaf(tree+i))
-       printf("node %d is a leaf.\n",(tree+i)->index);
-       }
-       printf("total number of leaves on this tree is %d.\n",get_number_leaves(tree,number_branches));
-       */
 
     free(code);
     free(b_counts);
