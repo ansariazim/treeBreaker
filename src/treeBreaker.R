@@ -49,6 +49,6 @@ for (s in seq(nrow(states)/10,nrow(states),nrow(states)/10)) {
 }
 
 #plot the correlation between the change points
-image(t(states[,-39]), axes=FALSE)
+image(t(states[,-ncol(states)]), axes=FALSE)
 axis(1, at=seq(0,1,length.out=10), labels= floor(seq(0,ncol(states)-1,length.out=10) ))
 axis(2, at=seq(0,1,length.out=10), labels= floor(rev( seq(0,nrow(states),length.out=10)) ))
