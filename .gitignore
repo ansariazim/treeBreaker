@@ -8,3 +8,9 @@ src/.treeBreaker.c.swp
 bin/treeBreaker
 
 src/outfile
+
+testData/simu.out
+
+testData/simu.pheno
+
+src/.Rhistory

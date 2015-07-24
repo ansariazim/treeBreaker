@@ -2,7 +2,8 @@ rm(list=ls())
 library('ape')
 
 #Read the tree and information attached to it
-tree=read.tree('outfile')
+outfile='../testData/simu.out'
+tree=read.tree(outfile)
 ntips=length(tree$tip.label)
 l=strsplit(tree$tip.label,'[{}|=]',perl=T)
 edge_index=rep(0,nrow(tree$edge))
@@ -22,7 +23,7 @@ for (i in 1:length(l)) {
 }
 
 #Read rest of file
-t=read.table('outfile',comment.char='(')
+t=read.table(outfile,comment.char='(')
 states =as.matrix(t[,2:(ncol(t)-1)])
 lambdas=as.vector(t[,ncol(t)])
 
