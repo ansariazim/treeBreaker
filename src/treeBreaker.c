@@ -237,7 +237,7 @@ int main(int argc, char *argv[]){
                     m0_propose_b(b_star, branches_len, lambda_star); /* I have to make sure that I don't propose change points on the branch under root that has length zero.*/
                     num_sec = count_phenos(code, parents, b_star, phenos, counts);
                     proposal_log_likelihood = log_likelihood(counts, num_sec);
-                    if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood + log_prob_move_0_to_1 - mh_model_0_all))){ /* move to model 1 accepted */
+                    if (gsl_rng_uniform(r) <(exp(proposal_log_likelihood + log_prob_move_1_to_0 - mh_model_0_all))){ /* move to model 1 accepted */
                         lambda = lambda_star;
                         for(j = 0; j < number_branches-1; j++)
                             b[j] = b_star[j];
