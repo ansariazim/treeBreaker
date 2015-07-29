@@ -64,16 +64,17 @@ simu <- function(n=100,inputtreefile=NULL,prefixout='simu',lambda=NULL,nbChangin
 } 
 
 testOnSimulation=function(nbChangingBranches=1) {
+  code=floor(runif(1)*1e9)
   #First simulate a dataset with given number of changepoints
-  simu(inputtreefile = '../testData/tree1000.nwk',prefix='../testData/simu',nbChangingBranches=nbChangingBranches)
+  simu(inputtreefile = '../testData/tree1000.nwk',prefix=sprintf('../testData/simu%d',code),nbChangingBranches=nbChangingBranches)
   #Run analysis
-  system(sprintf('../bin/treeBreaker ../testData/tree1000.nwk ../testData/simu.pheno ../testData/simu.out'))
+  system(sprintf('../bin/treeBreaker ../testData/tree1000.nwk ../testData/simu%d.pheno ../testData/simu%d.out',code,code))
   #Read output file
-  t=read.table('../testData/simu.out',comment.char='(')
+  t=read.table(sprintf('../testData/simu%d.out',code),comment.char='(')
   states =as.matrix(t[,2:(ncol(t)-1)])
   lambdas=as.vector(t[,ncol(t)])
   #Calculate number of inferred changepoints and Bayes Factor and return both
   inferredNbChangingBranches=mean(rowSums(states)-1)
   bf=length(which(lambdas>0))/length(which(lambdas==0))
-  return(c(inferredNbChangingBranches,bf))
+  return(c(inferredNbChangingBranches,bf,code))
 }
