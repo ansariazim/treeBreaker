@@ -6,6 +6,15 @@ Algorithm to divide a phylogenetic tree into segments based on phenotypes at the
 - The command to build the project is as follows (assuming that you are in src directory):
 
     gcc -lgsl treeBreaker.c ../libs/knhx.c -o ../bin/treeBreaker
+
+- If you need to install gsl locally you can do it as follows:
+    wget ftp://ftp.gnu.org/gnu/gsl/gsl-1.16.tar.gz
+    tar xfz gsl-1.16.tar.gz
+    rm gsl-1.16.tar.gz
+    cd gsl-1.16 && ./configure && make
+
+    cd ../src
+    gcc -I ../gsl-1.16  -lm treeBreaker.c ../libs/knhx.c -o treeBreaker ../gsl-1.16/.libs/libgsl.a 
     
 **Example run**
 
