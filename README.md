@@ -1,5 +1,5 @@
-# treeBreaker
-Algorithm to divide a phylogenetic tree into segments based on phenotypes at the leaves of the tree
+# TreeBreaker
+TreeBreaker can infer the evolution of a phenotype distribution on a phylogenetic tree, and divide the tree into segments where this distribution is constant.
 
 **Bulding the project**
 - To build the project you need to install gsl.
