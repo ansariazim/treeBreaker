@@ -1,5 +1,5 @@
 # TreeBreaker
-TreeBreaker can infer the evolution of a phenotype distribution on a phylogenetic tree, and divide the tree into segments where this distribution is constant.
+TreeBreaker can infer the evolution of a discrete phenotype distribution on a phylogenetic tree, and divide the tree into segments where this distribution is constant.
 
 For more details about how TreeBreaker works, please see the manuscript "Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree" by M Azim Ansari and Xavier Didelot, http://biorxiv.org/content/early/2016/02/23/040980
 
@@ -24,8 +24,9 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
     ./treeBreaker ../testData/testTree.newick ../testData/phenoTestFile.txt outfile
 ```
 
-In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualise using the R script `treeBreaker.R` which produces the following plot:
+In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualised using the R script `treeBreaker.R` which produces the following plot:
 <img src="https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png" width="500">
+The branch thickness and colour are drawn proportional to the posterior probability of having a change point on that branch. In the above figure the clade below the thick red branch has a distinct phenotype distribution from the rest of the tree.
 
 **Input arguments**
 
@@ -37,9 +38,9 @@ There are 3 mandatory input arguments which should have the following order:
     
 There are also some optional arguments, which must be indicated before the three mandatory input arguments:
 
-    -x NUM      Sets the number of iterations after burn-in (default is 50000)
-    -y NUM      Sets the number of burn-in iterations (default is 50000)
-    -z NUM      Sets the number of iterations between samples (default is 100)
+    -x NUM      Sets the number of iterations after burn-in (default is 500000)
+    -y NUM      Sets the number of burn-in iterations (default is 500000)
+    -z NUM      Sets the number of iterations between samples (default is 1000)
     -S NUM      Sets the seed for the random number generator to NUM
     -v          Verbose mode
 
@@ -52,3 +53,7 @@ The output file contains:
     - pheno: for leaf nodes, the phenotype that was read from the input phenotype file.
     - posterior: the posterior probability of having a change point on the branch above the node.
 
+**Help**
+
+Do contact us if you need help with using the software or you have suggestion on how to improve the R code for processing the output.
+Email address: ansari dot azim @ gmail dot com dot lizard (my email address does not have dot lizard at the end of it.)
