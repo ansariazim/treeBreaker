@@ -1,5 +1,4 @@
 library('ape')
-library(colorspace)
 
 #Read the tree and information attached to it
 outfile='outfile'
@@ -32,7 +31,8 @@ par(mfrow=c(1,1))
 ec=edge_posterior
 w=which(tree$edge[,1]==(ntips+1));if (length(w)==2) ec[w]=max(ec[w])
 plot.phylo(tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
-tiplabels(NULL,pch=16,col=rainbow_hcl(length(unique(tip_pheno)))[tip_pheno+1])
+ncols=length(unique(tip_pheno))
+tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+tip_pheno])
 stop("Stopping here")
 
 #Plot some MCMC traces
