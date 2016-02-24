@@ -25,7 +25,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 ```
 
 In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualise using the R script `treeBreaker.R` which produces the following plot:
-![alt tag](https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png)
+<img src="https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png" width="500">
 
 **Input arguments**
 
