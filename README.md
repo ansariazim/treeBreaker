@@ -7,7 +7,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 - To build the project you need to install gsl.
 - The command to build the project is as follows (assuming that you are in src directory):
 ```bash
-    gcc -lgsl treeBreaker.c ../libs/knhx.c -o ../bin/treeBreaker
+    gcc -lgsl treeBreaker.c ../libs/knhx.c -o treeBreaker
 ```
 - If you need to install gsl locally you can do it as follows:  
 ```bash
@@ -21,7 +21,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 ```
 **Example run**
 ```bash
-    ../bin/treeBreaker ../testData/testTree.newick ../testData/phenoTestFile.txt outfile
+    ./treeBreaker ../testData/testTree.newick ../testData/phenoTestFile.txt outfile
 ```
 **Input arguments**
 
