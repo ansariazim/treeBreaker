@@ -26,6 +26,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 
 In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualised using the R script `treeBreaker.R` which produces the following plot:
 <img src="https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png" width="500">
+
 The branch thickness and colour are drawn proportional to the posterior probability of having a change point on that branch. In the above figure the clade below the thick red branch has a distinct phenotype distribution from the rest of the tree.
 
 **Input arguments**
@@ -56,4 +57,5 @@ The output file contains:
 **Help**
 
 Do contact us if you need help with using the software or you have suggestion on how to improve the R code for processing the output.
+
 Email address: ansari dot azim @ gmail dot com dot lizard (my email address does not have dot lizard at the end of it.)
