@@ -48,11 +48,13 @@ for (s in seq(nrow(states)/10,nrow(states),nrow(states)/10)) {
     ec[i]=states[s,edge_index[i]+1]
   }
   w=which(tree$edge[,1]==(ntips+1));if (length(w)==2) ec[w]=max(ec[w])
-  plot.phylo(tree,tip.color=rgb(tip_pheno,0,0),edge.color=rgb(ec,0,0),edge.width=1+ec*10)
+  plot.phylo(tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
+  tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+tip_pheno])
 }
 
 #Calculate Bayes Factor
 bf=length(which(lambdas>0))/length(which(lambdas==0))
+cat('Bayes factor of model with one or more change points to model with no change point is: ',bf)
 
 #plot the correlation between the change points
 par(mfrow=c(1,1))
