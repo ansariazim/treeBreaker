@@ -1,6 +1,8 @@
 # TreeBreaker
 TreeBreaker can infer the evolution of a phenotype distribution on a phylogenetic tree, and divide the tree into segments where this distribution is constant.
 
+For more details about how TreeBreaker works, please see the manuscript "Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree" by M Azim Ansari and Xavier Didelot, http://biorxiv.org/content/early/2016/02/23/040980
+
 **Bulding the project**
 - To build the project you need to install gsl.
 - The command to build the project is as follows (assuming that you are in src directory):
