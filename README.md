@@ -23,6 +23,10 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 ```bash
     ./treeBreaker ../testData/testTree.newick ../testData/phenoTestFile.txt outfile
 ```
+
+In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualise using the R script `treeBreaker.R` which produces the following plot:
+![alt tag](https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png)
+
 **Input arguments**
 
 There are 3 mandatory input arguments which should have the following order:
