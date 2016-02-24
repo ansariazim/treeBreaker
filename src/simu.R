@@ -60,7 +60,7 @@ simu <- function(n=100,inputtreefile=NULL,prefixout='simu',lambda=NULL,nbChangin
 
   #Create phenotypes and write to file
   pheno=as.numeric(runif(n)<h[1:n])
-  write.table(cbind(tr$tip.label,pheno),sprintf('%s.pheno',prefixout),quote=F,row.names=F,col.names=F)
+  write.table(cbind(tr$tip.label,pheno),sprintf('%s.txt',prefixout),quote=F,row.names=F,col.names=F)
 } 
 
 testOnSimulation=function(nbChangingBranches=1) {
@@ -68,7 +68,7 @@ testOnSimulation=function(nbChangingBranches=1) {
   #First simulate a dataset with given number of changepoints
   simu(inputtreefile = '../testData/tree1000.nwk',prefix=sprintf('../testData/simu%d',code),nbChangingBranches=nbChangingBranches)
   #Run analysis
-  system(sprintf('../bin/treeBreaker ../testData/tree1000.nwk ../testData/simu%d.pheno ../testData/simu%d.out',code,code))
+  system(sprintf('../src/treeBreaker ../testData/tree1000.nwk ../testData/simu%d.txt ../testData/simu%d.out',code,code))
   #Read output file
   t=read.table(sprintf('../testData/simu%d.out',code),comment.char='(')
   states =as.matrix(t[,2:(ncol(t)-1)])
@@ -78,3 +78,6 @@ testOnSimulation=function(nbChangingBranches=1) {
   bf=length(which(lambdas>0))/length(which(lambdas==0))
   return(c(inferredNbChangingBranches,bf,code))
 }
+
+#Generate test files with:
+set.seed(0);write.tree(rtree(100),'../testData/testTree.newick');simu(inputtreefile='../testData/testTree.newick',nbChangingBranches=5,seed=1,prefixout = '../testData/phenoTestFile')
