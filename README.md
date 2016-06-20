@@ -9,7 +9,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 ```bash
     gcc -lgsl treeBreaker.c ../libs/knhx.c -o treeBreaker
 ```
-- If you need to install gsl locally you can do it as follows:  
+- If you need to install gsl locally you can do it as follows (assumig that you are in the treeBreaker directory):  
 ```bash
     wget ftp://ftp.gnu.org/gnu/gsl/gsl-1.16.tar.gz  
     tar xfz gsl-1.16.tar.gz  
@@ -17,7 +17,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
     cd gsl-1.16 && ./configure && make  
   
     cd ../src  
-    gcc -I ../gsl-1.16  -lm treeBreaker.c ../libs/knhx.c -o treeBreaker ../gsl-1.16/.libs/libgsl.a   
+    gcc -I ../gsl-1.16 treeBreaker.c ../libs/knhx.c -o treeBreaker ../gsl-1.16/.libs/libgsl.a -lm 
 ```
 **Example run**
 ```bash
