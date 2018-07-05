@@ -1,15 +1,15 @@
 # TreeBreaker
 TreeBreaker can infer the evolution of a discrete phenotype distribution on a phylogenetic tree, and divide the tree into segments where this distribution is constant.
 
-For more details about how TreeBreaker works, please see the manuscript "Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree" by M Azim Ansari and Xavier Didelot, http://biorxiv.org/content/early/2016/02/23/040980
+For more details about how TreeBreaker works, please see the manuscript "Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree" by M Azim Ansari and Xavier Didelot, Genetics 2016 204:89-98 http://www.genetics.org/lookup/doi/10.1534/genetics.116.190496
 
-**Bulding the project**
-- To build the project you need to install gsl.
-- The command to build the project is as follows (assuming that you are in src directory):
+**Compiling TreeBreaker**
+- To compile TreeBreaker you need the GNU Scientific Library (GSL).
+- The command to compile TreeBreaker is as follows (assuming that you are in the treeBreaker directory):
 ```bash
-    gcc -lgsl treeBreaker.c ../libs/knhx.c -o treeBreaker
+    gcc -lgsl src/treeBreaker.c libs/knhx.c -o treeBreaker
 ```
-- If you need to install gsl locally you can do it as follows (assumig that you are in the treeBreaker directory):  
+- If you need to install the GSL locally (for example if you do not have superuser privilege) you can do it as follows (assuming that you are in the treeBreaker directory):  
 ```bash
     wget ftp://ftp.gnu.org/gnu/gsl/gsl-1.16.tar.gz  
     tar xfz gsl-1.16.tar.gz  
