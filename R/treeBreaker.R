@@ -9,12 +9,99 @@
 #' @param verbose verbose mode
 #' @return success status
 #' @export
+#' @importFrom utils read.table
 #' @importFrom Rcpp evalCpp
 #' @useDynLib treeBreaker
 treeBreaker = function(inputfile_tree,inputfile_phenotype,outputfile,x=500000,y=500000,z=1000,seed=NA,verbose=F) {
   args=c('-x',sprintf('%d',x),'-y',sprintf('%d',y),'-z',sprintf('%d',z),inputfile_tree,inputfile_phenotype,outputfile)
   if (verbose) args=c('-v',args)
-  x=print('\n')
+  writeLines('     ')
   if (!is.na(seed)) args=c('-S',sprintf('%d',seed),args)
-  mainR(args)
+  status=mainR(args)
+  if (status==1) return(NULL) else return(readOutFile(outputfile))
 }
+
+#' Reading an output file
+#' @param outfile name of the output file
+#' @return object containing output
+#' @export
+readOutFile = function(outfile) {
+  #Read the tree and information attached to it
+  res=list()
+  res$tree=ape::read.tree(outfile)
+  ntips=length(res$tree$tip.label)
+  l=strsplit(res$tree$tip.label,'[{}|=]',perl=T)
+  res$edge_index=rep(0,nrow(res$tree$edge))
+  res$tip_pheno=rep(0,length(l))
+  edge_posterior=rep(0,nrow(res$tree$edge))
+  for (i in 1:length(l)) {
+    res$tree$tip.label[i]=l[[i]][1]
+    res$edge_index[which(res$tree$edge[,2]==i)]=as.numeric(l[[i]][3])
+    res$tip_pheno[i]=as.numeric(l[[i]][5])
+    res$edge_posterior[which(res$tree$edge[,2]==i)]=as.numeric(l[[i]][7])
+  }
+  l=strsplit(res$tree$node.label,'[{}|=]',perl=T)
+  res$node_posterior=rep(0,length(l))
+  for (i in 1:length(l)) {
+    res$edge_index[which(res$tree$edge[,2]==i+ntips)]=as.numeric(l[[i]][3])
+    res$edge_posterior[which(res$tree$edge[,2]==(i+ntips))]=as.numeric(l[[i]][5])
+  }
+
+  #Read rest of file
+  t=read.table(outfile,comment.char='(')
+  res$states =as.matrix(t[,2:(ncol(t)-1)])
+  res$lambdas=as.vector(t[,ncol(t)])
+  class(res)<-"resTreeBreaker"
+  return(res)
+}
+
+#' Plotting function
+#' @param res An object of class resTreeBreaker
+#' @param type Type of plot to perform, can be cons (default), states, traces or correlation
+#' @return Invisible object
+#' @export
+plot.resTreeBreaker = function(res,type='cons') {
+  if (type=='cons') {
+    #Plot tree showing phenotype and posterior
+    par(mfrow=c(1,1))
+    ec=res$edge_posterior
+    w=which(res$tree$edge[,1]==(ape::Ntip(res$tree)+1));if (length(w)==2) ec[w]=max(ec[w])
+    ape::plot.phylo(res$tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
+    ncols=length(unique(res$tip_pheno))
+    ape::tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+res$tip_pheno])
+  }
+
+  if (type=='trace') {
+    #Plot some MCMC traces
+    par(mfrow=c(1,2))
+    plot(res$lambdas,type = 'l',xlab='Sampled iteration',ylab='lambda')
+    plot(rowSums(res$states)-1,type='l',xlab='Sampled iteration',ylab='Number of changepoints')
+  }
+
+  if (type=='states') {
+    #Plot ten MCMC states
+    par(mfrow=c(2,5))
+    for (s in seq(nrow(res$states)/10,nrow(res$states),nrow(res$states)/10)) {
+      ec=rep(0,nrow(res$tree$edge))
+      for (i in 1:nrow(res$tree$edge)) {
+        ec[i]=res$states[s,res$edge_index[i]+1]
+      }
+      w=which(res$tree$edge[,1]==(ape::Ntip(res$tree)+1));if (length(w)==2) ec[w]=max(ec[w])
+      ape::plot.phylo(res$tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
+      ncols=length(unique(res$tip_pheno))
+      ape::tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+res$tip_pheno])
+    }
+  }
+
+  if (type=='correlation') {
+    #plot the correlation between the change points
+    par(mfrow=c(1,1))
+    image(t(res$states[,-ncol(res$states)]), axes=FALSE)
+    axis(1, at=seq(0,1,length.out=10), labels= floor(seq(0,ncol(res$states)-1,length.out=10) ))
+    axis(2, at=seq(0,1,length.out=10), labels= floor(rev( seq(0,nrow(res$states),length.out=10)) ))
+  }
+
+  return(invisible(res))
+}
+
+

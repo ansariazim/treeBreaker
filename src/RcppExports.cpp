@@ -6,13 +6,14 @@
 using namespace Rcpp;
 
 // mainR
-void mainR(const StringVector& arguments);
+int mainR(const StringVector& arguments);
 RcppExport SEXP _treeBreaker_mainR(SEXP argumentsSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const StringVector& >::type arguments(argumentsSEXP);
-    mainR(arguments);
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(mainR(arguments));
+    return rcpp_result_gen;
 END_RCPP
 }
 

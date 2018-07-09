@@ -7,7 +7,11 @@ devtools::install_github('ansariazim/treeBreaker',ref='devel')
 
 Analysis can then be performed from within R using for example the command:
 ```
-treeBreaker::treeBreaker('testData/testTree.newick','testData/phenoTestFile.txt','out')
+res=treeBreaker::treeBreaker('testData/testTree.newick','testData/phenoTestFile.txt','out')
+plot(res)
+plot(res,'trace')
+plot(res,'states')
+plot(res,'correlation')
 ```
 
 Note that the package has been developed without making any changes to the original files, so that the instructions below for using treeBreaker as a standalone tool should still be valid.

@@ -2,6 +2,6 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 mainR <- function(arguments) {
-    invisible(.Call('_treeBreaker_mainR', PACKAGE = 'treeBreaker', arguments))
+    .Call('_treeBreaker_mainR', PACKAGE = 'treeBreaker', arguments)
 }
 
