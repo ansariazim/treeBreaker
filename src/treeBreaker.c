@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
     int *n_leaves_under;
     int *b, *b_star;
     int *sections, num_sec, recording_counter;
-    int **counts,temp_counter=0;
+    int **counts;
     double  lambda, model_0_log_evidence, mh_model_0_all;
     unsigned long int *b_counts, denominator, model_0_counter=0, model_1_counter=0;
     int model_state;
@@ -97,6 +97,7 @@ int main(int argc, char *argv[]){
     int **code;
     double proposal_log_likelihood, proposal_log_b_prior, proposal_log_lambda_prior, lambda_star, old_log_likelihood, old_log_b_prior, old_log_lambda_prior;
 
+    optind=0;
     while ((c = getopt (argc, argv, "x:y:z:S:v")) != -1)
         switch (c)
         {
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]){
 
     char * output_filename = argv[optind++];
 
-    if (verbose) for(i = 0; i<number_branches; i++){ 
+    if (verbose) for(i = 0; i<number_branches; i++){
         printf("[%3d]\t%3d\t%3d\t%4g", i, parents[i], n_leaves_under[i], branches_len[i]);
         for (j = 0; j < n_leaves_under[i]; ++j)
             printf("\t%d", leaves_under[i][j]);
@@ -353,7 +354,7 @@ int main(int argc, char *argv[]){
  * given par and b and pheno arrays, we determine the number of sections on the tree and then
  * count the number of each phenotype in each section. Here we assume binary phenotypes.
  * We just simply start at the bottom of the tree (leaves) and go up until we reach a branch with a change point on it. We then set the leaves cluster number.
- * In addition we use an array of pointers that point to array of counts for each section. If a branch has a change point on it and it is reached by a leaf then 
+ * In addition we use an array of pointers that point to array of counts for each section. If a branch has a change point on it and it is reached by a leaf then
  * we set the pointer to point counts and modify the counts as appropriate.
  */
 int count_phenos(int **code, int par[], int b[], int pheno[], int **counts)
@@ -506,7 +507,7 @@ double m0_propose_lambda(void){
     return gsl_ran_exponential(r,inv_T);
 }
 
-/*propose b from the prior on b when in model 0 
+/*propose b from the prior on b when in model 0
  * Here I need to check to make sure that branches are not of length zero.
  * I have set the length of one of the branches under the root to zero and
  * exp(0) is not defined. This could cause a problem on some machines. */
