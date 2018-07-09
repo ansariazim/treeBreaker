@@ -1,3 +1,17 @@
+# About this branch...
+
+This branch is an attempt to make treeBreaker available as a R package. The package can be installed in R using the command:
+```
+devtools::install_github('ansariazim/treeBreaker',ref='devel')
+```
+
+Analysis can then be performed from within R using for example the command:
+```
+treeBreaker::treeBreaker('testData/testTree.newick','testData/phenoTestFile.txt','out')
+```
+
+Note that the package has been developed without making any changes to the original files, so that the instructions below for using treeBreaker as a standalone tool should still be valid.
+
 # TreeBreaker
 TreeBreaker can infer the evolution of a discrete phenotype distribution on a phylogenetic tree, and divide the tree into segments where this distribution is constant.
 
