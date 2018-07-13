@@ -9,9 +9,6 @@
 #' @param verbose verbose mode
 #' @return success status
 #' @export
-#' @importFrom utils read.table
-#' @importFrom Rcpp evalCpp
-#' @useDynLib treeBreaker
 treeBreaker = function(inputfile_tree,inputfile_phenotype,outputfile,x=500000,y=500000,z=1000,seed=NA,verbose=F) {
   args=c('-x',sprintf('%d',x),'-y',sprintf('%d',y),'-z',sprintf('%d',z),inputfile_tree,inputfile_phenotype,outputfile)
   if (verbose) args=c('-v',args)
@@ -56,52 +53,53 @@ readOutFile = function(outfile) {
 }
 
 #' Plotting function
-#' @param res An object of class resTreeBreaker
+#' @param x An object of class resTreeBreaker
 #' @param type Type of plot to perform, can be cons (default), states, traces or correlation
+#' @param ... Ignored
 #' @return Invisible object
 #' @export
-plot.resTreeBreaker = function(res,type='cons') {
+plot.resTreeBreaker = function(x,type='cons',...) {
   if (type=='cons') {
     #Plot tree showing phenotype and posterior
     par(mfrow=c(1,1))
-    ec=res$edge_posterior
-    w=which(res$tree$edge[,1]==(ape::Ntip(res$tree)+1));if (length(w)==2) ec[w]=max(ec[w])
-    ape::plot.phylo(res$tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
-    ncols=length(unique(res$tip_pheno))
-    ape::tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+res$tip_pheno])
+    ec=x$edge_posterior
+    w=which(x$tree$edge[,1]==(ape::Ntip(x$tree)+1));if (length(w)==2) ec[w]=max(ec[w])
+    ape::plot.phylo(x$tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
+    ncols=length(unique(x$tip_pheno))
+    ape::tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+x$tip_pheno])
   }
 
   if (type=='trace') {
     #Plot some MCMC traces
     par(mfrow=c(1,2))
-    plot(res$lambdas,type = 'l',xlab='Sampled iteration',ylab='lambda')
-    plot(rowSums(res$states)-1,type='l',xlab='Sampled iteration',ylab='Number of changepoints')
+    plot(x$lambdas,type = 'l',xlab='Sampled iteration',ylab='lambda')
+    plot(rowSums(x$states)-1,type='l',xlab='Sampled iteration',ylab='Number of changepoints')
   }
 
   if (type=='states') {
     #Plot ten MCMC states
     par(mfrow=c(2,5))
-    for (s in seq(nrow(res$states)/10,nrow(res$states),nrow(res$states)/10)) {
-      ec=rep(0,nrow(res$tree$edge))
-      for (i in 1:nrow(res$tree$edge)) {
-        ec[i]=res$states[s,res$edge_index[i]+1]
+    for (s in seq(nrow(x$states)/10,nrow(x$states),nrow(x$states)/10)) {
+      ec=rep(0,nrow(x$tree$edge))
+      for (i in 1:nrow(x$tree$edge)) {
+        ec[i]=x$states[s,x$edge_index[i]+1]
       }
-      w=which(res$tree$edge[,1]==(ape::Ntip(res$tree)+1));if (length(w)==2) ec[w]=max(ec[w])
-      ape::plot.phylo(res$tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
-      ncols=length(unique(res$tip_pheno))
-      ape::tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+res$tip_pheno])
+      w=which(x$tree$edge[,1]==(ape::Ntip(x$tree)+1));if (length(w)==2) ec[w]=max(ec[w])
+      ape::plot.phylo(x$tree,show.tip.label = F,edge.color=rgb(ec,0,0),edge.width=1+ec*10)
+      ncols=length(unique(x$tip_pheno))
+      ape::tiplabels(NULL,pch=16,col=rainbow(2*ncols)[ncols+x$tip_pheno])
     }
   }
 
   if (type=='correlation') {
     #plot the correlation between the change points
     par(mfrow=c(1,1))
-    image(t(res$states[,-ncol(res$states)]), axes=FALSE)
-    axis(1, at=seq(0,1,length.out=10), labels= floor(seq(0,ncol(res$states)-1,length.out=10) ))
-    axis(2, at=seq(0,1,length.out=10), labels= floor(rev( seq(0,nrow(res$states),length.out=10)) ))
+    image(t(x$states[,-ncol(x$states)]), axes=FALSE)
+    axis(1, at=seq(0,1,length.out=10), labels= floor(seq(0,ncol(x$states)-1,length.out=10) ))
+    axis(2, at=seq(0,1,length.out=10), labels= floor(rev( seq(0,nrow(x$states),length.out=10)) ))
   }
 
-  return(invisible(res))
+  return(invisible(x))
 }
 
 

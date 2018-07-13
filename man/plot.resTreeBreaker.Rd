@@ -4,12 +4,14 @@
 \alias{plot.resTreeBreaker}
 \title{Plotting function}
 \usage{
-\method{plot}{resTreeBreaker}(res, type = "cons")
+\method{plot}{resTreeBreaker}(x, type = "cons", ...)
 }
 \arguments{
-\item{res}{An object of class resTreeBreaker}
+\item{x}{An object of class resTreeBreaker}
 
 \item{type}{Type of plot to perform, can be cons (default), states, traces or correlation}
+
+\item{...}{Ignored}
 }
 \value{
 Invisible object
