@@ -5,7 +5,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
 
 ## Using TreeBreaker as a R package
 
-TreeBreaker can be installed and used as a standalone application as described below. Alternatively, TreeBreaker can also be used as a R package, as described [here](add_link).
+TreeBreaker can be installed and used as a standalone application as described below. Alternatively, TreeBreaker can also be used as a R package, as described [here](https://rawgit.com/ansariazim/treeBreaker/devel/vignettes/intro.html).
 
 ## Compiling TreeBreaker
 - To compile TreeBreaker you need the GNU Scientific Library (GSL).
