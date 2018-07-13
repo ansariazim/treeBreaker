@@ -1,0 +1,63 @@
+---
+title: "Introduction to TreeBreaker as a R package"
+author: "Xavier Didelot"
+date: "`r Sys.Date()`"
+vignette: |
+  %\VignetteEngine{knitr::rmarkdown}  %\VignetteIndexEntry{Introduction to TreeBreaker as a R package}    %\usepackage[utf8]{inputenc}
+output: html_document
+---
+
+## About this page...
+
+This page describes the use of TreeBreaker as a R package. If you would prefer to use TreeBreaker as a standalone application, see [here](https://github.com/ansariazim/treeBreaker). 
+
+## Installation
+
+```{r "setup", include=FALSE}
+require("knitr")
+opts_knit$set(root.dir = "..")
+```
+
+The package can be installed in R using the command:
+```{r, eval=FALSE}
+devtools::install_github('ansariazim/treeBreaker')
+```
+
+You should then be able to load the package with:
+```{r}
+library(treeBreaker)
+```
+
+## Analysis
+
+Analysis can be performed using the command:
+```{r}
+res=treeBreaker('testData/testTree.newick','testData/phenoTestFile.txt','out')
+```
+
+The first argument is the name of a Newick file containing the tree to analyse, the second argument is the name of a tab separated file containing the phenotype data, and the third argument is the name of a file in which to store the results.
+
+```{r, include = F}
+file.remove('out')
+```
+
+## Exploring the results
+
+Once the analysis has finished running, results can be displayed as follows:
+
+```{r}
+plot(res)
+```
+
+```{r}
+plot(res,'trace')
+```
+
+```{r}
+plot(res,'states')
+```
+
+```{r}
+plot(res,'correlation')
+```
+

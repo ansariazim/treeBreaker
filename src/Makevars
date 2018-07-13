@@ -1,0 +1,4 @@
+SOURCES = RcppExports.cpp mainR.cpp treeBreaker.c ../libs/knhx.c
+OBJECTS = RcppExports.o mainR.o treeBreaker.o ../libs/knhx.o
+GSL_LIBS   = -lgsl -lcblas
+PKG_LIBS = $(GSL_LIBS)

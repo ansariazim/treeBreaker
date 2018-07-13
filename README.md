@@ -3,7 +3,11 @@ TreeBreaker can infer the evolution of a discrete phenotype distribution on a ph
 
 For more details about how TreeBreaker works, please see the manuscript "Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree" by M Azim Ansari and Xavier Didelot, Genetics 2016 204:89-98 http://www.genetics.org/lookup/doi/10.1534/genetics.116.190496
 
-**Compiling TreeBreaker**
+## Using TreeBreaker as a R package
+
+TreeBreaker can be installed and used as a standalone application as described below. Alternatively, TreeBreaker can also be used as a R package, as described [here](https://rawgit.com/ansariazim/treeBreaker/devel/vignettes/intro.html).
+
+## Compiling TreeBreaker
 - To compile TreeBreaker you need the GNU Scientific Library (GSL).
 - The command to compile TreeBreaker is as follows (assuming that you are in the treeBreaker directory):
 ```bash
@@ -19,17 +23,17 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
     cd ../src  
     gcc -I ../gsl-1.16 treeBreaker.c ../libs/knhx.c -o treeBreaker ../gsl-1.16/.libs/libgsl.a -lm 
 ```
-**Example run**
+## Example run
 ```bash
     ./treeBreaker ../testData/testTree.newick ../testData/phenoTestFile.txt outfile
 ```
 
-In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualised using the R script `treeBreaker.R` which produces the following plot:
+In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualised using the R script `R/scripts/makeFigs.R` which produces the following plot:
 <img src="https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png" width="500">
 
 The branch thickness and colour are drawn proportional to the posterior probability of having a change point on that branch. In the above figure the clade below the thick red branch has a distinct phenotype distribution from the rest of the tree.
 
-**Input arguments**
+## Input arguments
 
 There are 3 mandatory input arguments which should have the following order:
   1. Input newick tree
@@ -45,7 +49,7 @@ There are also some optional arguments, which must be indicated before the three
     -S NUM      Sets the seed for the random number generator to NUM
     -v          Verbose mode
 
-**Output file**
+## Output file
 
 The output file contains: 
 - One line for each MCMC sample, with columns indicating whether branches have a changepoint on them (1) or not (0). To know which column matches which node on the tree, refer to the "index" attribute described below. The last column contains the values of lambda.
@@ -54,7 +58,7 @@ The output file contains:
     - pheno: for leaf nodes, the phenotype that was read from the input phenotype file.
     - posterior: the posterior probability of having a change point on the branch above the node.
 
-**Help**
+## Help
 
 Do contact us if you need help with using the software or you have suggestion on how to improve the R code for processing the output.
 

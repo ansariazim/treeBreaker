@@ -14,3 +14,10 @@ testData/simu.out
 testData/simu.pheno
 
 src/.Rhistory
+.Rproj.user
+R/.Rhistory
+*.o
+*.so
+.Rbuildignore
+.Rhistory
+treeBreaker

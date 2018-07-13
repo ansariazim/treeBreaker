@@ -1,0 +1,19 @@
+Package: treeBreaker
+Type: Package
+Title: Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree
+Version: 1.1
+Authors@R: c(person("Azim", "Ansari",
+                    email = "ansari.azim@gmail.com",
+		    role = c("aut","cre")),
+	     person("Xavier", "Didelot",
+	            email = "xavier.didelot@gmail.com",
+		    role = c("aut")))
+Maintainer: Azim Ansari <ansari.azim@gmail.com>
+Description: Algorithm to divide a phylogenetic tree into segments based on phenotypes at the leaves of the tree.
+License: GPL (>=2)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Imports: Rcpp (>= 0.12.8), ape, stats, graphics
+LinkingTo: Rcpp
+
