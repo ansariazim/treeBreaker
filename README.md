@@ -42,7 +42,7 @@ For more details about how TreeBreaker works, please see the manuscript "Bayesia
     ./treeBreaker ../testData/testTree.newick ../testData/phenoTestFile.txt outfile
 ```
 
-In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualised using the R script `treeBreaker.R` which produces the following plot:
+In this example there are 100 leaves in the tree and the command above should only take a few seconds to run. The output can then be visualised using the R script `R/scripts/makeFigs.R` which produces the following plot:
 <img src="https://raw.githubusercontent.com/ansariazim/treeBreaker/master/testData/testData.png" width="500">
 
 The branch thickness and colour are drawn proportional to the posterior probability of having a change point on that branch. In the above figure the clade below the thick red branch has a distinct phenotype distribution from the rest of the tree.

@@ -1,7 +1,7 @@
 Package: treeBreaker
 Type: Package
 Title: Bayesian Inference of the Evolution of a Phenotype Distribution on a Phylogenetic Tree
-Version: 0.1.0
+Version: 1.1
 Authors@R: c(person("Azim", "Ansari",
                     email = "ansari.azim@gmail.com",
 		    role = c("aut","cre")),
